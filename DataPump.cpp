@@ -151,8 +151,9 @@ int parse_arguments(int argc, char* argv[], ProgramArguments* _arguments) {
         return -1;
     }
     
-    if ( ( l_flag == 1) && (mat_check != 0) ) {
-        fprintf(stderr, "Error: Read from file option (-l) cannot be used with parameterized matrix sizes\n");
+    if ( ( l_flag == 1) && 
+        ( (g_flag == 1 ) || (mat_check != 0) ) ) {
+        fprintf(stderr, "Error: Read from file option (-l) cannot be used together with -g and/or parameterized matrix sizes\n");
         return -1;
 	}
 
@@ -304,30 +305,44 @@ int main(int argc, char* argv[]) {
 
 	//int result = test_persistence(operations);
 	
-	if (arguments->g_flag == 1) {
+    if (arguments->g_flag == 1) {
         operation_count = generate_matrix_test_data(arguments, operations);
-	}
 
-	const char* matrix_filename = "Matrixtest.txt";
-	//printf("Operation 3 result matrix value: %d\n", operations[3].result->uint_data);
+        char* matrix_filename = arguments->filename;
+        //printf("Operation 3 result matrix value: %d\n", operations[3].result->uint_data);
 
-    FILE* file = fopen(matrix_filename, "w");
-    if (file == nullptr) {
-        fprintf(stderr, "Error opening file %s for writing.\n", matrix_filename);
-        return -1; // Exit with error code
-	}
-    else {
-        fwrite("\n", sizeof(char), strlen("\n"), file);
-		fclose(file);
-        for (int i = 0; i < operation_count; i++) {
-            
-            if (i == 9) {
-                printf("Operation %d:\n", i);
-			}
-            operation_print_info(&operations[i]);
-            int save_result = save_operation_to_file(matrix_filename, operations);
+        FILE* file = fopen(matrix_filename, "w");
+        if (file == nullptr) {
+            fprintf(stderr, "Error opening file %s for writing.\n", matrix_filename);
+            return -1; // Exit with error code
+        }
+        else {
+            fwrite("\n", sizeof(char), strlen("\n"), file);
+            fclose(file);
+            for (int i = 0; i < operation_count; i++) {
+
+                if (i == 9) {
+                    printf("Operation %d:\n", i);
+                }
+                operation_print_info(&operations[i]);
+                int save_result = save_operation_to_file(matrix_filename, operations);
+            }
         }
     }
+    else if (arguments->l_flag == 1) {
+        // Load matrix from file
+        char* matrix_filename = arguments->filename;
+        printf("Loading matrix from file: %s\n", matrix_filename);
+        result = test_persistence(operations);
+        if (result != 0) {
+            fprintf(stderr, "Error loading operations from file.\n");
+            return -1; // Exit with error code
+        }
+        
+        for (int i = 0; i < operation_count; i++) {
+            operation_print_info(&operations[i]);
+        }
+	}
 
 	result = 0;
 

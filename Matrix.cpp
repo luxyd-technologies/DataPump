@@ -93,26 +93,30 @@ void matrix_set_uint(Matrix* m, int row, int col, unsigned int value) {
 // Allocates matrix memory (initialized to zero)
 Matrix* create_matrix(int _matrix_id, int _operand_id, int _rows, int _cols, int _matrix_type) {
 
-    Matrix* m = static_cast<Matrix*>(malloc(sizeof(Matrix)));
+    Matrix* m = (Matrix*)(malloc(sizeof(Matrix)));
     if (!m) return nullptr;
 
     m->matrix_id = _matrix_id;
     m->operand_id = _operand_id;
     m->rows = _rows;
     m->cols = _cols;
+    m->ushort_data = (unsigned short int*) (calloc(_rows * _cols, sizeof(unsigned short int)));
+    m->uint_data = (unsigned  int*)(calloc(_rows * _cols, sizeof(unsigned int)));
 
     if (_matrix_type == MATRIX_TYPE_OPERAND) {
         m->matrix_type = MATRIX_TYPE_OPERAND;
-        m->ushort_data = static_cast<unsigned short int*>(calloc(_rows * _cols, sizeof(unsigned short int)));
     }
     else if (_matrix_type == MATRIX_TYPE_RESULT) {
         m->matrix_type = MATRIX_TYPE_RESULT;
-        m->uint_data = static_cast<unsigned  int*>(calloc(_rows * _cols, sizeof(unsigned  int)));
     }
     else {
-        free(m);
-        return nullptr; // Invalid matrix type
-    }
+        free(m->ushort_data); // Free allocated memory for ushort_data
+        free(m->uint_data);   // Free allocated memory for uint_data
+        free(m);              // Free the matrix struct
+		printf("Invalid matrix type specified.\n");
+		return nullptr;     // not possible path, but just in case
+	}
+
 
     if ((!m->ushort_data) && (!m->uint_data)) {
         free(m);
@@ -148,16 +152,42 @@ int save_matrix_tofile(FILE* file, Matrix* _matrix ) {
     if (!_matrix || !file) return -1; // Invalid matrix or file pointer
 	printf("Saving matrix to file...\n");
 
+    int row_count = _matrix->rows;
+	int col_count = _matrix->cols;
+
     if (_matrix->matrix_type == MATRIX_TYPE_OPERAND) {
         fwrite("+\n", sizeof(char), strlen("+\n"), file);
-   
-
+        for (int row_counter = 0; row_counter < row_count; row_counter++) {
+            for (int col_counter = 0; col_counter < col_count; col_counter++) {
+				char buffer[12]; // Buffer to hold the string representation of the ushort value
+                char* value = itoa(matrix_get_ushort(_matrix, row_counter, col_counter), buffer, 10);
+                fwrite(value, sizeof(strlen(value)), 1, file); // Write ushort data
+                if (col_counter < col_count -1 ) { // If not the last column, write a space
+                    fwrite(",", sizeof(char), 1, file);
+				}
+                else {
+                    fwrite("\n", sizeof(char), 1, file); // Write newline after the last column
+                }
+            }
+		}
         fwrite("*\n", sizeof(char), strlen("*\n"), file);
     }
 
     else if (_matrix->matrix_type == MATRIX_TYPE_RESULT) {
         fwrite("$\n", sizeof(char), strlen("$\n"), file);
-
+        for (int row_counter = 0; row_counter < row_count; row_counter++) {
+            for (int col_counter = 0; col_counter < col_count; col_counter++) {
+                char buffer[12]; // Buffer to hold the string representation of the ushort value
+                char* value = itoa(matrix_get_uint(_matrix, row_counter, col_counter), buffer, 10);
+                fwrite(value, sizeof(strlen(value)), 1, file); // Write ushort data
+                if (col_counter < col_count - 1) { // If not the last column, write a space
+                    fwrite(",", sizeof(char), 1, file);
+                }
+                else {
+                    fwrite("\n", sizeof(char), 1, file); // Write newline after the last column
+				}
+            }
+        }
 		fwrite("-\n", sizeof(char), strlen("-\n"), file);
     }
     else {
@@ -238,12 +268,6 @@ unsigned int multiply_matrices(Matrix* _matrix1, Matrix* _matrix2, Matrix* _matr
         result = MATX_OP_INCOMPATIBLE;
         return result;
     }
-    // Initialize result matrix
-    //_matrix_result = create_matrix(_matrix1->rows, _matrix2->cols);
-    /*if (!_matrix_result) {
-        result = MATX_OP_FAILURE;
-        return result;
-    }*/
 
     else {
         for (int row_counter = 0; row_counter < _matrix_result->rows; ++row_counter) {                // _matrix_result->rows = _matrix1->rows

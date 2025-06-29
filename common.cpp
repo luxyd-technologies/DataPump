@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstdlib>   // For malloc, calloc, free
 #include <stdlib.h>
+
 //#include <stdexcept> // For std::out_of_range
 //#include "Matrix.h"
 #include "common.h"
@@ -23,7 +24,105 @@ int print_message(int message_type, char* message) {
 
 }
 
+//int ushort_to_string(unsigned short int value, char* buffer, size_t size) {
+//    char temp[6]; // Max 5 digits + null terminator
+//    int i = 0;
+//
+//    // Handle zero explicitly
+//    if (value == 0) {
+//        if (size < 2) return -1; // Not enough space
+//        buffer[0] = '0';
+//        buffer[1] = '\0';
+//        return 0;
+//    }
+//
+//    // Extract digits in reverse order
+//    while (value > 0) {
+//        temp[i++] = '0' + (value % 10); // Convert last digit to char
+//        value /= 10; // Remove last digit
+//    }
+//    temp[i] = '\0'; // Null-terminate temporary string
+//
+//    // Check if buffer is large enough
+//    if (size < (size_t)(i + 1)) return -1;
+//
+//    // Reverse digits to correct order
+//    int len = i;
+//    for (int j = 0; j < len; j++) {
+//        buffer[j] = temp[i - 1 - j];
+//    }
+//    buffer[len] = '\0'; // Null-terminate result
+//
+//    return 0; // Success
+//}
 
+char* ushort_to_string(unsigned short int num) {
+    if (num == 0) {
+        char* str = (char*)malloc(2);
+        if (str == NULL) return NULL;
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
+    }
+
+    // Calculate length
+    unsigned int temp = num;
+    size_t len = 0;
+    while (temp != 0) {
+        len++;
+        temp /= 10;
+    }
+
+    // Allocate memory
+    char* str = (char*)malloc(len + 1);
+    if (str == NULL) return NULL;
+
+    // Convert digits
+    size_t i = len;
+    temp = num;
+    while (temp != 0) {
+        unsigned int digit = temp % 10;
+        str[--i] = '0' + digit; // Convert digit to char
+        temp /= 10;
+    }
+    str[len] = '\0'; // Null-terminate
+
+    return str;
+}
+
+char* uint_to_string(unsigned int num) {
+    if (num == 0) {
+        char* str = (char*) malloc(2);
+        if (str == NULL) return NULL;
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
+    }
+
+    // Calculate length
+    unsigned int temp = num;
+    size_t len = 0;
+    while (temp != 0) {
+        len++;
+        temp /= 10;
+    }
+
+    // Allocate memory
+    char* str = (char*) malloc(len + 1);
+    if (str == NULL) return NULL;
+
+    // Convert digits
+    size_t i = len;
+    temp = num;
+    while (temp != 0) {
+        unsigned int digit = temp % 10;
+        str[--i] = '0' + digit; // Convert digit to char
+        temp /= 10;
+    }
+    str[len] = '\0'; // Null-terminate
+
+    return str;
+}
 //unsigned short int generate_random_ushort(void) {
 //    unsigned int r1 = (unsigned int)rand();
 //    unsigned int r2 = (unsigned int)rand();

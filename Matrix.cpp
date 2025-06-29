@@ -7,6 +7,7 @@
 #include <stdexcept> // For std::out_of_range
 #include "Matrix.h"
 #include "common.h"
+#include <string.h>
 
 //using namespace std;
 
@@ -38,12 +39,12 @@ void operation_print_info(Operation* op) {
 
 int save_operation_to_file(const char* filename, Operation* _operation) {
     if (!_operation || !filename) return -1; // Invalid operation or filename
-    FILE* file = fopen(filename, "a");
+    FILE* file = fopen(filename, "ab");
     if (!file) return -1; // File opening failed
 	fwrite("[\n", sizeof(char), strlen("[\n"), file);       // Write operation start marker 
-	save_matrix_tofile(file, _operation->operand1);         // write operand1 matrix to file    
-	save_matrix_tofile(file, _operation->operand2);         // write operand2 matrix to file
-	save_matrix_tofile(file, _operation->result);           // write result matrix to file
+	save_matrix_tofile(file, _operation->operand1, _operation->operation_id);         // write operand1 matrix to file    
+	save_matrix_tofile(file, _operation->operand2, _operation->operation_id);         // write operand2 matrix to file
+	save_matrix_tofile(file, _operation->result, _operation->operation_id);           // write result matrix to file
     fwrite("]\n", sizeof(char), strlen("]\n"), file);       // Write operation end market 
     fclose(file);
     return 0; // Success
@@ -61,7 +62,9 @@ void free_operation(Operation* op) {
 // Safe element access with bounds checking
 unsigned short matrix_get_ushort(const Matrix* m, int row, int col) {
     if (row < 0 || row >= m->rows || col < 0 || col >= m->cols) {
-        throw std::out_of_range("Matrix index out of bounds");
+        //throw std::out_of_range("Matrix index out of bounds");
+		fprintf(stderr, "Matrix index out of bounds: row=%d, col=%d, rows=%d, cols=%d\n", row, col, m->rows, m->cols);
+        return NULL; // Return an error value or handle it as needed
     }
     return m->ushort_data[row * m->cols + col];
 }
@@ -69,7 +72,9 @@ unsigned short matrix_get_ushort(const Matrix* m, int row, int col) {
 // Safe element access with bounds checking
 unsigned int matrix_get_uint(const Matrix* m, int row, int col) {
     if (row < 0 || row >= m->rows || col < 0 || col >= m->cols) {
-        throw std::out_of_range("Matrix index out of bounds");
+        //throw std::out_of_range("Matrix index out of bounds");
+        fprintf(stderr, "Matrix index out of bounds: row=%d, col=%d, rows=%d, cols=%d\n", row, col, m->rows, m->cols);
+        return NULL; // Return an error value or handle it as needed
     }
     return m->uint_data[row * m->cols + col];
 }
@@ -77,7 +82,8 @@ unsigned int matrix_get_uint(const Matrix* m, int row, int col) {
  //Safe element modification with bounds checking
 void matrix_set_ushort(Matrix* m, int row, int col, unsigned short int value) {
     if (row < 0 || row >= m->rows || col < 0 || col >= m->cols) {
-        throw std::out_of_range("Matrix index out of bounds");
+        //throw std::out_of_range("Matrix index out of bounds");
+        fprintf(stderr, "Matrix index out of bounds: row=%d, col=%d, rows=%d, cols=%d\n", row, col, m->rows, m->cols);
     }
     m->ushort_data[row * m->cols + col] = value;
 }
@@ -85,7 +91,8 @@ void matrix_set_ushort(Matrix* m, int row, int col, unsigned short int value) {
 // Safe element modification with bounds checking
 void matrix_set_uint(Matrix* m, int row, int col, unsigned int value) {
     if (row < 0 || row >= m->rows || col < 0 || col >= m->cols) {
-        throw std::out_of_range("Matrix index out of bounds");
+        //throw std::out_of_range("Matrix index out of bounds");
+        fprintf(stderr, "Matrix index out of bounds: row=%d, col=%d, rows=%d, cols=%d\n", row, col, m->rows, m->cols);
     }
     m->uint_data[row * m->cols + col] = value;
 }
@@ -147,7 +154,7 @@ void matrix_print_info(Matrix* m) {
 }
 
 
-int save_matrix_tofile(FILE* file, Matrix* _matrix ) {
+int save_matrix_tofile(FILE* file, Matrix* _matrix, int _operation_id ) {
 
     if (!_matrix || !file) return -1; // Invalid matrix or file pointer
 	printf("Saving matrix to file...\n");
@@ -156,58 +163,45 @@ int save_matrix_tofile(FILE* file, Matrix* _matrix ) {
 	int col_count = _matrix->cols;
 
     if (_matrix->matrix_type == MATRIX_TYPE_OPERAND) {
-        fwrite("+\n", sizeof(char), strlen("+\n"), file);
+        //fwrite("+\n", sizeof(char), strlen("+\n"), file);
+        
+		fprintf(file, "+\n%d,%d,%d,%d,%d\n", _matrix->matrix_id, _operation_id, row_count, col_count, _matrix->matrix_type); // Write matrix dimensions
         for (int row_counter = 0; row_counter < row_count; row_counter++) {
             for (int col_counter = 0; col_counter < col_count; col_counter++) {
-				char buffer[12]; // Buffer to hold the string representation of the ushort value
-                char* value = itoa(matrix_get_ushort(_matrix, row_counter, col_counter), buffer, 10);
-                fwrite(value, sizeof(strlen(value)), 1, file); // Write ushort data
-                if (col_counter < col_count -1 ) { // If not the last column, write a space
-                    fwrite(",", sizeof(char), 1, file);
+                unsigned int value = (unsigned int) matrix_get_ushort(_matrix, row_counter, col_counter);
+				fprintf(file, "%d", value); // Write ushort data as string
+				printf("Value: %d", value); // Debug output
+                if (col_counter < col_count -1 ) { // If not the last column, write a comma
+					fprintf(file, ","); // Write space after comma for readability  
+					printf(","); // Debug output
 				}
-                else {
-                    fwrite("\n", sizeof(char), 1, file); // Write newline after the last column
-                }
             }
+            fprintf(file, "\n"); // next line after the last column
+            printf("\n"); // Debug output
 		}
-        fwrite("*\n", sizeof(char), strlen("*\n"), file);
+        //fwrite("*\n", sizeof(char), strlen("*\n"), file);
+        fprintf(file, "*\n");
     }
 
     else if (_matrix->matrix_type == MATRIX_TYPE_RESULT) {
-        fwrite("$\n", sizeof(char), strlen("$\n"), file);
+        //fwrite("$\n", sizeof(char), strlen("$\n"), file);
+        fprintf(file, "$\n%d,%d,%d,%d,%d\n", _matrix->matrix_id, _operation_id, row_count, col_count, _matrix->matrix_type); // Write matrix dimensions
         for (int row_counter = 0; row_counter < row_count; row_counter++) {
             for (int col_counter = 0; col_counter < col_count; col_counter++) {
-                char buffer[12]; // Buffer to hold the string representation of the ushort value
-                char* value = itoa(matrix_get_uint(_matrix, row_counter, col_counter), buffer, 10);
-                fwrite(value, sizeof(strlen(value)), 1, file); // Write ushort data
+                unsigned int value = (unsigned int)matrix_get_uint(_matrix, row_counter, col_counter);
+                fprintf(file, "%d", value); // Write ushort data as string
                 if (col_counter < col_count - 1) { // If not the last column, write a space
-                    fwrite(",", sizeof(char), 1, file);
+                    fprintf(file, ","); // Write ushort data as string
                 }
-                else {
-                    fwrite("\n", sizeof(char), 1, file); // Write newline after the last column
-				}
             }
+            fprintf(file, "\n"); // next line after the last column
         }
-		fwrite("-\n", sizeof(char), strlen("-\n"), file);
+        fprintf(file, "-\n");
     }
     else {
         return -1; // Invalid matrix type
 	}
 
-   
-    // Write matrix metadata
-    //fwrite(&_matrix->matrix_id, sizeof(_matrix->matrix_id), 1, file);
-    //fwrite(&_matrix->operand_id, sizeof(_matrix->operand_id), 1, file);
-    //fwrite(&_matrix->rows, sizeof(_matrix->rows), 1, file);
-    //fwrite(&_matrix->cols, sizeof(_matrix->cols), 1, file);
-    //fwrite(&_matrix->matrix_type, sizeof(_matrix->matrix_type), 1, file);
-    // Write matrix data
-    //if (_matrix->matrix_type == MATRIX_TYPE_OPERAND) {
-    //    fwrite(_matrix->ushort_data, sizeof(unsigned short int), _matrix->rows * _matrix->cols, file);
-    //}
-    //else if (_matrix->matrix_type == MATRIX_TYPE_RESULT) {
-    //    fwrite(_matrix->uint_data, sizeof(unsigned int), _matrix->rows * _matrix->cols, file);
-    //}
     return 0; // Success
 }
 

@@ -4,10 +4,13 @@
 
 #define MSG_SYSTEM_OUTPUT 0
 #define MSG_ERROR_OUTPUT 1
+#define RESULT_ERROR		-1
+#define RESULT_SUCCESS		0
 
 
-
-int  print_message(int message_type, char* message);
+int		print_message(int message_type, char* message);
+char*	ushort_to_string(unsigned short int num);
+char*	uint_to_string(unsigned int num);
 
 //struct Matrix {
 //	unsigned short int matrix_id; // Unique identifier for the matrix

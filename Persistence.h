@@ -34,6 +34,6 @@ unsigned int* extract_result_matrix_row(char* _line, unsigned short _col_count, 
 Matrix* extract_matrix_operand(char* _line, int _matrix_id, int _operand_id, int _row_count, int _col_count, int _matrix_type);
 FILE* open_matrix_file(const char* filename, const char* option);
 char* read_rawline(FILE* file, char* buffer, int size);
-int test_persistence(Operation* _operations);
+int test_persistence(char* _filename, Operation* _operations);
 
 #endif // MATRIX_PERSISTENCE_H

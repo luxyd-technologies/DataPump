@@ -6,11 +6,14 @@
 #define MSG_ERROR_OUTPUT 1
 #define RESULT_ERROR		-1
 #define RESULT_SUCCESS		0
+#define SINGLE_INSTANCE		1	
+#define MAX_FILENAME_LENGTH 256
+#define MAX_ROW_STRING_LENGTH 4096
 
-
-int		print_message(int message_type, char* message);
-char*	ushort_to_string(unsigned short int num);
-char*	uint_to_string(unsigned int num);
+unsigned int	generate_truly_random_uint();
+int				print_message(int message_type, char* message);
+char*			ushort_to_string(unsigned short int num);
+char*			uint_to_string(unsigned int num);
 
 //struct Matrix {
 //	unsigned short int matrix_id; // Unique identifier for the matrix

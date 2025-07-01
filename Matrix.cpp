@@ -2,7 +2,7 @@
 //
 
 #include <iostream>
-#include <cstdlib>   // For malloc, calloc, free
+#include <cstdlib>   // For calloc, calloc, free
 #include <stdlib.h>
 #include <stdexcept> // For std::out_of_range
 #include "Matrix.h"
@@ -12,7 +12,7 @@
 //using namespace std;
 
 Operation* create_operation(unsigned int _operation_id, Matrix* _matrix_operand1, Matrix* _matrix_operand2, Matrix* _matrix_result) {
-    Operation* op = static_cast<Operation*>(malloc(sizeof(Operation)));
+    Operation* op = static_cast<Operation*>(calloc(1, sizeof(Operation)));
     if (!op) return NULL; // Memory allocation failed
     op->operation_id = _operation_id;
     op->operand1 = _matrix_operand1;
@@ -38,16 +38,24 @@ void operation_print_info(Operation* op) {
 }
 
 int save_operation_to_file(const char* filename, Operation* _operation) {
-    if (!_operation || !filename) return -1; // Invalid operation or filename
+
+    if (!_operation || !filename) return RESULT_ERROR; // Invalid operation or filename
+
     FILE* file = fopen(filename, "ab");
-    if (!file) return -1; // File opening failed
+    if (!file) return RESULT_ERROR; // File opening failed
+
+	printf("\n\tSaving operation %d to file %s...\n\n", _operation->operation_id, filename);
+
 	fwrite("[\n", sizeof(char), strlen("[\n"), file);       // Write operation start marker 
-	save_matrix_tofile(file, _operation->operand1, _operation->operation_id);         // write operand1 matrix to file    
-	save_matrix_tofile(file, _operation->operand2, _operation->operation_id);         // write operand2 matrix to file
-	save_matrix_tofile(file, _operation->result, _operation->operation_id);           // write result matrix to file
+	save_matrix_tofile(file, _operation->operand1, _operation->operation_id, 1);         // write operand1 matrix to file    
+	save_matrix_tofile(file, _operation->operand2, _operation->operation_id, 2);         // write operand2 matrix to file
+	save_matrix_tofile(file, _operation->result, _operation->operation_id, 3);           // write result matrix to file
     fwrite("]\n", sizeof(char), strlen("]\n"), file);       // Write operation end market 
+
+	printf("\tOperation %d saved to file %s successfully\n", _operation->operation_id, filename);
     fclose(file);
-    return 0; // Success
+
+    return RESULT_SUCCESS; // Success
 }
 
 void free_operation(Operation* op) {
@@ -100,7 +108,7 @@ void matrix_set_uint(Matrix* m, int row, int col, unsigned int value) {
 // Allocates matrix memory (initialized to zero)
 Matrix* create_matrix(int _matrix_id, int _operand_id, int _rows, int _cols, int _matrix_type) {
 
-    Matrix* m = (Matrix*)(malloc(sizeof(Matrix)));
+    Matrix* m = (Matrix*)(calloc(SINGLE_INSTANCE, sizeof(Matrix)));
     if (!m) return nullptr;
 
     m->matrix_id = _matrix_id;
@@ -108,7 +116,7 @@ Matrix* create_matrix(int _matrix_id, int _operand_id, int _rows, int _cols, int
     m->rows = _rows;
     m->cols = _cols;
     m->ushort_data = (unsigned short int*) (calloc(_rows * _cols, sizeof(unsigned short int)));
-    m->uint_data = (unsigned  int*)(calloc(_rows * _cols, sizeof(unsigned int)));
+    m->uint_data = (unsigned int*)(calloc(_rows * _cols, sizeof(unsigned int)));
 
     if (_matrix_type == MATRIX_TYPE_OPERAND) {
         m->matrix_type = MATRIX_TYPE_OPERAND;
@@ -134,14 +142,14 @@ Matrix* create_matrix(int _matrix_id, int _operand_id, int _rows, int _cols, int
 
 void matrix_print_info(Matrix* m) {
     if (m) {
-        //printf("\nMatrix ID: %d\t Operand Id:%d\t Dimension: %d x %d\tMatrix Type: %d\n", m->matrix_id, m->operand_id, m->rows, m->cols, m->matrix_type);
+        printf("\nMatrix ID: %d\t Operand Id:%d\t Dimension: %d x %d\tMatrix Type: %d\n", m->matrix_id, m->operand_id, m->rows, m->cols, m->matrix_type);
         for (int i = 0; i < m->rows; ++i) {
             for (int j = 0; j < m->cols; ++j) {
                 if (m->matrix_type == MATRIX_TYPE_OPERAND) {
-                    //printf("%d ", m->ushort_data[i * m->cols + j]);
+                    printf("%d ", m->ushort_data[i * m->cols + j]);
                 }
                 else if (m->matrix_type == MATRIX_TYPE_RESULT) {
-                    //printf("%u ", m->uint_data[i * m->cols + j]);
+                    printf("%u ", m->uint_data[i * m->cols + j]);
                 }
             }
             //printf("\n");
@@ -154,55 +162,71 @@ void matrix_print_info(Matrix* m) {
 }
 
 
-int save_matrix_tofile(FILE* file, Matrix* _matrix, int _operation_id ) {
+int save_matrix_tofile(FILE* file, Matrix* _matrix, int _operation_id, int operand_no) {
 
     if (!_matrix || !file) return -1; // Invalid matrix or file pointer
-	printf("Saving matrix to file...\n");
+	
 
     int row_count = _matrix->rows;
 	int col_count = _matrix->cols;
 
+	
     if (_matrix->matrix_type == MATRIX_TYPE_OPERAND) {
-        //fwrite("+\n", sizeof(char), strlen("+\n"), file);
+
+        printf("\t\tOperation id %d - Saving operand %d with matrix id %d size (%d x %d) to file...\n", _operation_id, operand_no, _matrix->matrix_id, _matrix->rows, _matrix->cols);
+		
+        fprintf(file, "+\n%d,%d,%d,%d,%d\n", _matrix->matrix_id, _operation_id, row_count, col_count, _matrix->matrix_type); // Write matrix dimensions
         
-		fprintf(file, "+\n%d,%d,%d,%d,%d\n", _matrix->matrix_id, _operation_id, row_count, col_count, _matrix->matrix_type); // Write matrix dimensions
         for (int row_counter = 0; row_counter < row_count; row_counter++) {
+            char row_string[MAX_ROW_STRING_LENGTH] = "";
             for (int col_counter = 0; col_counter < col_count; col_counter++) {
+                char col_string[20] = ""; // Temporary string for column value
                 unsigned int value = (unsigned int) matrix_get_ushort(_matrix, row_counter, col_counter);
-				fprintf(file, "%d", value); // Write ushort data as string
-				printf("Value: %d", value); // Debug output
+				fprintf(file, "%hu", value); // Write ushort data as string
+				sprintf(col_string, "%d", value); // Debug output
+                strcat(row_string, col_string); // Append comma for readability
                 if (col_counter < col_count -1 ) { // If not the last column, write a comma
 					fprintf(file, ","); // Write space after comma for readability  
-					printf(","); // Debug output
+                    strcat(row_string, ","); // Append comma for readability
 				}
             }
             fprintf(file, "\n"); // next line after the last column
-            printf("\n"); // Debug output
+            printf("\t\t%s\n", row_string); // Debug output
 		}
         //fwrite("*\n", sizeof(char), strlen("*\n"), file);
         fprintf(file, "*\n");
+		printf("\t\tOperation id %d - Operand %d with matrix id %d saved to file successfully\n\n", _operation_id, operand_no, _matrix->matrix_id);
     }
 
     else if (_matrix->matrix_type == MATRIX_TYPE_RESULT) {
-        //fwrite("$\n", sizeof(char), strlen("$\n"), file);
+        
+        printf("\t\tOperation id %d - Saving result matrix with matrix id %d size (%d x %d) to file...\n", _operation_id, _matrix->matrix_id, _matrix->rows, _matrix->cols);
+
         fprintf(file, "$\n%d,%d,%d,%d,%d\n", _matrix->matrix_id, _operation_id, row_count, col_count, _matrix->matrix_type); // Write matrix dimensions
         for (int row_counter = 0; row_counter < row_count; row_counter++) {
+            char row_string[MAX_ROW_STRING_LENGTH] = "";
             for (int col_counter = 0; col_counter < col_count; col_counter++) {
-                unsigned int value = (unsigned int)matrix_get_uint(_matrix, row_counter, col_counter);
-                fprintf(file, "%d", value); // Write ushort data as string
+				char col_string[20] = ""; // Temporary string for column value
+                unsigned int value = (unsigned int) matrix_get_uint(_matrix, row_counter, col_counter);
+                fprintf(file, "%u", value); // Write uint data as string
+                sprintf(col_string, "%u", value); // Debug output
+				strcat(row_string, col_string); // Append comma for readability
                 if (col_counter < col_count - 1) { // If not the last column, write a space
                     fprintf(file, ","); // Write ushort data as string
+                    strcat(row_string, ","); // Append comma for readability
                 }
             }
             fprintf(file, "\n"); // next line after the last column
+            printf("\t\t%s\n", row_string); // Debug output
         }
         fprintf(file, "-\n");
+        printf("\t\tOperation id %d - Result matrix with matrix id %d saved to file successfully\n\n", _operation_id, _matrix->matrix_id);
     }
     else {
-        return -1; // Invalid matrix type
+        return RESULT_ERROR; // Invalid matrix type
 	}
 
-    return 0; // Success
+    return RESULT_SUCCESS; // Success
 }
 
 // Safely deallocates matrix memory
@@ -222,31 +246,42 @@ void free_matrix(Matrix* m) {
     }
 }
 
+
 unsigned short int generate_random_ushort(void) {
-    unsigned int r1 = (unsigned int)rand();
-    unsigned int r2 = (unsigned int)rand();
+	unsigned int r1 = (unsigned int)generate_truly_random_uint();     //todo: use better random number generator
+    unsigned int r2 = (unsigned int)generate_truly_random_uint();
     return (unsigned short int)(((r1 >> 7) << 8) | (r2 >> 7));
 }
 
 unsigned short init_matrix_operand1(Matrix* mat) {
 
+	printf("Initializing Matrix Operand 1 for Operation %d\n", mat->operand_id);
     for (int i = 0; i < mat->rows; ++i) {
+		printf("Row %d\t ", i); // Debug output
         for (int j = 0; j < mat->cols; ++j) {
-            matrix_set_ushort(mat, i, j, generate_random_ushort()); // Initialize remaining elements to random values
+			unsigned short int value = generate_random_ushort(); // Generate a random ushort value
+            matrix_set_ushort(mat, i, j, value); // Initialize remaining elements to random values
+			printf("%hu, ", value); // Print each element for debugging
         }
+		printf("\n"); // New line after each row
     }
 
     //std::cout << "Matrix Operand 1 Initialized, Size:" << mat->rows << " x " << mat->cols << " matrix " << std::endl; // Debug output
 
-    return (unsigned short)0;
+    return (unsigned short) 0;
 }
 
 unsigned short init_matrix_operand2(Matrix* mat) {
 
+    printf("Initializing Matrix Operand 2 for Operation %d\n", mat->operand_id);
     for (int i = 0; i < mat->rows; ++i) {
+        printf("Row %d\t ", i); // Debug output
         for (int j = 0; j < mat->cols; ++j) {
-            matrix_set_ushort(mat, i, j, generate_random_ushort()); // Initialize remaining elements to random values
+            unsigned short int value = generate_random_ushort(); // Generate a random ushort value
+            matrix_set_ushort(mat, i, j, value); // Initialize remaining elements to random values
+            printf("%hu, ", value); // Print each element for debugging
         }
+        printf("\n"); // New line after each row
     }
 
     //std::cout << "Matrix Operand 2 Initialized, Size:" << mat->rows << " x " << mat->cols << " matrix " << std::endl; // Debug output

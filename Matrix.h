@@ -57,7 +57,7 @@ unsigned int    matrix_get_uint(const Matrix* m, int row, int col);
 void            matrix_set_ushort(Matrix* m, int row, int col, unsigned short int value);
 void            matrix_set_uint(Matrix* m, int row, int col, unsigned int value);
 void            matrix_print_info(Matrix* m);
-int             save_matrix_tofile(FILE* file, Matrix* _matrix, int _operation_id);
+int             save_matrix_tofile(FILE* file, Matrix* _matrix, int _operation_id, int operand_no);
 void            free_matrix(Matrix* m);
 
 unsigned short	generate_random_ushort(void);

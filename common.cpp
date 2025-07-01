@@ -1,11 +1,26 @@
 
 #include <iostream>
-#include <cstdlib>   // For malloc, calloc, free
+#include <cstdlib>   // For calloc, calloc, free
 #include <stdlib.h>
-
-//#include <stdexcept> // For std::out_of_range
-//#include "Matrix.h"
+#include <stdio.h>
+#include <time.h>    // For time, srand
 #include "common.h"
+
+
+unsigned int generate_truly_random_uint() {
+    static int seeded = 0;
+    if (!seeded) {
+        srand((unsigned int)time(NULL)); // Seed using current time
+        seeded = 1;
+    }
+
+    unsigned int num = 0;
+    for (size_t i = 0; i < sizeof(unsigned int); i++) {
+        num = (num << 8) | (rand() & 0xFF); // Combine random bytes
+    }
+    return num;
+}
+
 
 int print_message(int message_type, char* message) {
 
@@ -58,7 +73,7 @@ int print_message(int message_type, char* message) {
 
 char* ushort_to_string(unsigned short int num) {
     if (num == 0) {
-        char* str = (char*)malloc(2);
+        char* str = (char*) calloc(1, 2);
         if (str == NULL) return NULL;
         str[0] = '0';
         str[1] = '\0';
@@ -74,7 +89,7 @@ char* ushort_to_string(unsigned short int num) {
     }
 
     // Allocate memory
-    char* str = (char*)malloc(len + 1);
+    char* str = (char*) calloc(1, len + 1);
     if (str == NULL) return NULL;
 
     // Convert digits
@@ -92,7 +107,7 @@ char* ushort_to_string(unsigned short int num) {
 
 char* uint_to_string(unsigned int num) {
     if (num == 0) {
-        char* str = (char*) malloc(2);
+        char* str = (char*) calloc(SINGLE_INSTANCE, 2);
         if (str == NULL) return NULL;
         str[0] = '0';
         str[1] = '\0';
@@ -108,7 +123,7 @@ char* uint_to_string(unsigned int num) {
     }
 
     // Allocate memory
-    char* str = (char*) malloc(len + 1);
+    char* str = (char*) calloc(SINGLE_INSTANCE, len + 1);
     if (str == NULL) return NULL;
 
     // Convert digits
@@ -130,7 +145,7 @@ char* uint_to_string(unsigned int num) {
 //}
 
 //Operation* create_operation(unsigned int _operation_id, Matrix* _matrix_operand1, Matrix* _matrix_operand2, Matrix* _matrix_result) {
-//    Operation* op = static_cast<Operation*>(malloc(sizeof(Operation)));
+//    Operation* op = static_cast<Operation*>(calloc(sizeof(Operation)));
 //    if (!op) return NULL; // Memory allocation failed
 //    op->operation_id = _operation_id;
 //    op->operand1 = _matrix_operand1;
@@ -197,7 +212,7 @@ char* uint_to_string(unsigned int num) {
 
 //// Allocates matrix memory (initialized to zero)
 //Matrix* create_matrix(int _matrix_id, int _operand_id, int _rows, int _cols, int _matrix_type) {
-//    Matrix* m = static_cast<Matrix*>(malloc(sizeof(Matrix)));
+//    Matrix* m = static_cast<Matrix*>(calloc(sizeof(Matrix)));
 //    if (!m) return nullptr;
 //
 //    m->matrix_id = _matrix_id;

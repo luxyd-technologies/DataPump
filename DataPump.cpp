@@ -166,7 +166,7 @@ int parse_arguments(int argc, char* argv[], ProgramArguments* _arguments) {
 	return 0;
 }
 
-int test_matrix_multiplication() {
+/*int test_matrix_multiplication() {
     // Test matrix multiplication logic here
     // This is a placeholder for actual test code
     //std::cout << "Testing matrix multiplication..." << std::endl;
@@ -177,12 +177,6 @@ int test_matrix_multiplication() {
     int mat2_row_count = 25;
     int mat2_col_count = 20;
 
-
-    //int mat1_row_count = 2;
-    //int mat1_col_count = 4;
-
-    //int mat2_row_count = 4;
-    //int mat2_col_count = 3;
     unsigned short matrix_id = 0;
     unsigned short operation_id = 0;
 
@@ -226,7 +220,7 @@ int test_matrix_multiplication() {
     free_matrix(mat2);
     free_matrix(mat_result);
     return 0;
-}
+}*/
 
 
 int generate_matrix_test_data(ProgramArguments* _arguments, Operation* _operations) {
@@ -278,7 +272,7 @@ int generate_matrix_test_data(ProgramArguments* _arguments, Operation* _operatio
         }
 
 		// create operation
-		Operation* current_operation = (Operation*)malloc(sizeof(Operation)); // Allocate memory for the operation
+		Operation* current_operation = (Operation*)calloc(1, sizeof(Operation)); // Allocate memory for the operation
         if (!current_operation) {
             //std::cerr << "Operation allocation failed!" << std::endl;
 			fprintf(stderr, "Operation allocation failed!\n");
@@ -311,31 +305,30 @@ int main(int argc, char* argv[]) {
     ProgramArguments* arguments = create_program_arguments();
     result = parse_arguments(argc, argv, arguments);
 	
-    Operation* operations = (Operation*) malloc(MAX_OPERATION_COUNT * sizeof(Operation*));
+    Operation* operations = (Operation*) calloc(MAX_OPERATION_COUNT, sizeof(Operation*));
 
 	//int result = test_persistence(operations);
 	
     if (arguments->g_flag == 1) {
-        operation_count = generate_matrix_test_data(arguments, operations);
-
+        
         char* matrix_filename = arguments->filename;
         //printf("Operation 3 result matrix value: %d\n", operations[3].result->uint_data);
 
+		printf("Running in generate mode...\nGenerating matrix data\n");
+        operation_count = generate_matrix_test_data(arguments, operations);
+
         FILE* file = fopen(matrix_filename, "w");
+
         if (file == nullptr) {
-            fprintf(stderr, "Error opening file %s for writing.\n", matrix_filename);
+            fprintf(stderr, "Error opening file %s for writing\n", matrix_filename);
             return -1; // Exit with error code
         }
         else {
-            //fwrite("\n", sizeof(char), strlen("\n"), file);
             fclose(file);
-            for (int i = 0; i < operation_count; i++) {
-
-                if (i == 9) {
-                    printf("Operation %d:\n", i);
-                }
-                operation_print_info(&operations[i]);
-                int save_result = save_operation_to_file(matrix_filename, operations);
+			printf("\nSaving generated matrix data to file : %s containing %d operations\n", matrix_filename, operation_count );
+            for (int i = 0; i < operation_count; i++, operations++) {
+                //operation_print_info(&operations[i]);
+                int save_result = save_operation_to_file(matrix_filename, operations); //TODO: remove this print, just for testing
             }
         }
     }
@@ -343,14 +336,14 @@ int main(int argc, char* argv[]) {
         // Load matrix from file
         char* matrix_filename = arguments->filename;
         printf("Loading matrix from file: %s\n", matrix_filename);
-        result = test_persistence(operations);
+        result = test_persistence(matrix_filename, operations);
         if (result != 0) {
             fprintf(stderr, "Error loading operations from file.\n");
             return -1; // Exit with error code
         }
         
         for (int i = 0; i < operation_count; i++) {
-            operation_print_info(&operations[i]);
+			operation_print_info(&operations[i]);       
         }
 	}
 

@@ -136,10 +136,10 @@ char* read_rawline(FILE* file, char* buffer, int size) {
     return buffer;
 }
 
-int  test_persistence(Operation* _operations) {
+int  test_persistence(char* _filename, Operation* _operations) {
 //int main(int argc, char* argv[]) {
 
-
+	char filename[MAX_FILENAME_LENGTH] = "";
     char line[MAX_LINE];
     int state = STATE_OUT_OF_OPERATION;
     int matrix_count = 0;
@@ -153,7 +153,17 @@ int  test_persistence(Operation* _operations) {
     //Operation* _operations[MAX_OPERATION_COUNT] = { nullptr, nullptr, nullptr };
 
 
-    FILE* file = open_matrix_file("MatrixSample.txt", "r");
+    if (_operations == nullptr) {
+        printf("Using MatrixSample.txt as the matrix input file\n");
+		strcat(filename, "MatrixSample.txt"); // set to Default filename
+        return RESULT_ERROR; // Handle error
+	}
+    else {
+        printf("Using %s as the matrix input file\n", _filename);
+        strcat(filename, _filename);
+	}
+
+    FILE* file = open_matrix_file(filename, "r");
 
     while (fgets(line, MAX_LINE, file) != NULL) {
 

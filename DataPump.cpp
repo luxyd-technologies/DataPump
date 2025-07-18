@@ -1,355 +1,337 @@
 #include <iostream>
+#include <assert.h>
 
+#include "Parameters.h"
+
+#include "MemTrack.h" // Memory tracking header
 #include "Matrix.h"
 #include "common.h"
-
 #include "Persistence.h"
+#include "MatrixAllocation.h"
+#include "ProgramArguments.h"
 
-struct ProgramArguments {
 
-    int     g_flag = 0;            // generate matrix test data file
-	int     l_flag = 0;            // load and read matrix test data file
-    int     n_flag = 0;
-    int     operation_count = 0;   //default_operation to generate
+constexpr int EXECUTE_TEST = 0; // Maximum number of operations to handle
 
-	int     r1_flag = 0;           // matrix 1 row
-    int     c1_flag = 0;           // matrix 1 column 
+//int old_main(int argc, char* argv[]) {
+//
+//        // main program parameters
+//	char matrix_filename[64] = { 0 }; // Buffer for filename
+//    int matrix1_row_count = 0;
+//	int matrix1_col_count = 0;
+//	int matrix2_row_count = 0;
+//	int matrix2_col_count = 0;
+//
+//    int result = 0;
+//    int operation_count = 0;
+//
+//
+//    result = parse_arguments(argc, argv, arguments);
+//	matrix1_row_count = arguments->mat1_row_count; // Get row count for matrix 1
+//	matrix1_col_count = arguments->mat1_col_count; // Get column count for matrix 1
+//	matrix2_row_count = arguments->mat2_row_count; // Get row count for matrix 2
+//	matrix2_col_count = arguments->mat2_col_count; // Get column count for matrix 2
+//
+//    if (arguments->generate_matrix_flag == 1) {             // if the execution mode is generate
+//
+//        strcpy(matrix_filename, arguments->filename);       // Copy from arguments the filename to save the matrices 
+//
+//
+//		operation_count = generate_matrix_test_data( /*arguments, operations, ,*/ operation_count,
+//            arguments->mat1_row_count, arguments->mat1_col_count, arguments->mat2_row_count, arguments->mat2_col_count);
+//
+//        FILE* file = fopen(matrix_filename, "w");
+//
+//        if (file == nullptr) {
+//            fprintf(stderr, "Error opening file %s for writing\n", matrix_filename);
+//            return -1; // Exit with error code
+//        }
+//        else {
+//            fclose(file);
+//            if (DEBUG_PERSISTENCE) {
+//                printf("\nSaving generated matrix data to file : %s containing %d operations\n", matrix_filename, operation_count);
+//            }
+//            for (int i = 0; i < operation_count; i++, operations++) {
+//                operation_print_info(&operations[i]);
+//                //int save_result = save_operation_to_file(matrix_filename, operations); //TODO: remove this print, just for testing
+//                deallocate_operation(operations);
+//            }
+//
+//        }
+//    }
+//    else if (arguments->l_flag == 1) {
+//        // Load matrix from file
+//        char* matrix_filename = arguments->filename;
+//        printf("Loading matrix from file: %s\n", matrix_filename);
+//        result = test_persistence(matrix_filename, operations);
+//        if (result != 0) {
+//            fprintf(stderr, "Error loading operations from file.\n");
+//            return -1; // Exit with error code
+//        }
+//
+//        for (int i = 0; i < operation_count; i++) {
+//            operation_print_info(&operations[i]);
+//        }
+//    }
+//
+//    else {
+//        fprintf(stderr, "No valid command line arguments provided.\n");
+//        return EXIT_FAILURE;
+//	}
+//	return EXIT_SUCCESS;
+//}
 
-    int     mat1_row_count = 0;    // row count
-	int     mat1_col_count = 0;    // column count
+Operation* generate_single_operation_test_data (
+	int _matrix1_row_count, int _matrix1_col_count,
+	int _matrix2_row_count, int _matrix2_col_count) {
 
-    int     r2_flag = 0;           // matrix 2 row
-    int     c2_flag = 0;           // matrix 1 column
+	int			matrix_id_counter = 0;
+	int			operation_count = 0;
+	short		head = 0; // Head of the linked list of operations
+	Operation*	previous_operation = nullptr; // Pointer to the previous operation
+	Operation*	operation_list_head = nullptr; // Head of the linked list of operations
 
-    int     mat2_row_count = 0;    // row count
-    int     mat2_col_count = 0;    // column count
-
-    int     f_flag = 0;            // Filename flag
-    char*   filename = nullptr;    // Filename
-
-};
-
-ProgramArguments* create_program_arguments() {
-
-    ProgramArguments* args = new ProgramArguments();
-	char _filename[] = "matrix_data.txt"; // Default filename
-    args->g_flag = 0;
-    args->l_flag = 0;
-    args->n_flag = 0;       
-    args->operation_count = MAX_OPERATION_COUNT;   // default operation count
-    args->r1_flag = 0;
-    args->c1_flag = 0;
-    args->r2_flag = 0;
-    args->c2_flag = 0;
-	args->mat1_row_count = 25;      // Default row count for matrix 1
-	args->mat1_col_count = 20;      // Default column count for matrix 1
-	args->mat2_row_count = 20;      // Default row count for matrix 2
-	args->mat2_col_count = 40;      // Default column count for matrix 2
-    args->f_flag = 0;
-    args->filename = _filename;
-    return args;
-}
-
-int parse_arguments(int argc, char* argv[], ProgramArguments* _arguments) {
-
-    char*   filename = NULL;
-    int     g_flag = 0, l_flag = 0, n_flag = 0, r1_flag = 0, c1_flag = 0, r2_flag = 0, c2_flag = 0, f_flag = 0; // local flag variables
-   
-    // Parse command-line arguments
-    for (int i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "-g") == 0) {           // generate matrix test data file
-			g_flag = 1;
-			_arguments->g_flag = g_flag;
-            printf("g flag set\n");
-        }
-
-		else if (strcmp(argv[i], "-l") == 0) {      // Load matrix from file
-			l_flag = 1;
-			_arguments->l_flag = l_flag;
-            printf("l flag set\n");
-        }
-
-        else if (strcmp(argv[i], "-n") == 0) {      // Load matrix from file
-            n_flag = 1;
-            printf("n flag set\n");
-            _arguments->r1_flag = r1_flag;
-            _arguments->operation_count = atoi(argv[++i]); // Get the next argument as row count
-            printf("Operation count set to: %d\n", _arguments->operation_count);
-        }
-
-		else if (strcmp(argv[i], "-r1") == 0) {     // Matrix 1 row count
-            r1_flag = 1;
-            printf("r1 flag set\n");
-			_arguments->r1_flag = r1_flag;
-			_arguments->mat1_row_count = atoi(argv[++i]); // Get the next argument as row count
-			printf("Matrix 1 row count set to: %d\n", _arguments->mat1_row_count);
-        }
-
-        else if (strcmp(argv[i], "-c1") == 0) {                         // Matrix 1 column count
-			c1_flag = 1;
-            printf("c1 flag set\n");
-			_arguments->c1_flag = c1_flag;
-            _arguments->mat1_col_count = atoi(argv[++i]);               // Get the next argument as row count
-            printf("Matrix 1 column count set to: %d\n", _arguments->mat1_col_count);
-        }
-
-		else if (strcmp(argv[i], "-r2") == 0) {                         // Matrix 2 row count
-            r2_flag = 1;
-            printf("r2 flag set\n");
-			_arguments->r2_flag = r2_flag;
-            _arguments->mat2_row_count = atoi(argv[++i]);               // Get the next argument as row count
-            printf("Matrix 2 row count set to: %d\n", _arguments->mat2_row_count);
-        }
-
-        else if (strcmp(argv[i], "-c2") == 0) {                 // Matrix 2 column count
-			c2_flag = 1;
-            printf("c2 flag set\n");
-			_arguments->c2_flag = c2_flag;
-            _arguments->mat2_col_count = atoi(argv[++i]);               // Get the next argument as row count
-            printf("Matrix 2 column count set to: %d\n", _arguments->mat2_col_count);
-        }
-
-        else if (strcmp(argv[i], "-f") == 0) {                  // Load matrix from file
-            f_flag = 1;
-            _arguments->f_flag = f_flag;
-            printf("l flag set\n");
-            if (i + 1 < argc) {                                 // Check if the next argument is a filename
-                filename = argv[++i];                           // Get the next argument as filename
-                printf("Filename going to be set from %s to: %s\n", _arguments->filename, filename);
-                _arguments->filename = filename;
-			}
-			else {
-                fprintf(stderr, "Error: No filename provided after -f flag\n");
-                return -1; // Error if no filename is provided
-            }
-        }
-        
-        else if ( (argc == 2) && 
-                    (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) ) { // Help command
-            printf("Usage: %s [options]\n", argv[0]);
-            printf("Options:\n");
-            printf("  -g          Generate matrix test data file\n");
-            printf("  -l          Load matrix from file\n");
-            printf("  -r1 <num>   Set matrix 1 row count\n");
-            printf("  -c1 <num>   Set matrix 1 column count\n");
-            printf("  -r2 <num>   Set matrix 2 row count\n");
-            printf("  -c2 <num>   Set matrix 2 column count\n");
-            printf("  -f <file>   Specify filename for loading/saving matrices\n");
-            printf("  -h, --help  Show this help message\n");
-			return 0; // Exit after showing help
-        }
-
-        else {
-            printf("Unknown command: %s\n", argv[i]);
-        }
-    }
-    
-    int mat_check = r1_flag + c1_flag + r2_flag + c2_flag;
-	// sanity check for flags, either all or none of the matrix flags should be set, i.e. either == 0 or == 4
-	if ( (mat_check != 0) && (mat_check != 4) ) {
-        fprintf(stderr, "Error: Invalid matrix flags. Use -r1, -c1, -r2, -c2 to specify matrix dimensions.\n");
-        return -1;
-    }
-    
-    if ( ( l_flag == 1) && 
-        ( (g_flag == 1 ) || (mat_check != 0) ) ) {
-        fprintf(stderr, "Error: Read from file option (-l) cannot be used together with -g and/or parameterized matrix sizes\n");
-        return -1;
+	if (DEBUG_MATRIX) {
+		printf("Generating matrix test data...\n");
+		//printf("Generating %d operations with the following matrix sizes:\n", _arguments->operation_count);
+		printf("Matrix 1: %d rows x %d columns\n", _matrix1_row_count, _matrix1_col_count);
+		printf("Matrix 2: %d rows x %d columns\n", _matrix2_row_count, _matrix2_col_count);
 	}
 
-    // Validate filename was provided
-    if ((f_flag == 1) && (filename == NULL)) {
-        fprintf(stderr, "Error: Filename is required\n");
-        return -1;
-    }
+	int operation_id_counter = 0;
 
-	return 0;
+	// Create matrix operand 1 
+	Matrix* matrix1 = create_matrix(SINGLE_INSTANCE, operation_id_counter, matrix_id_counter++,
+		_matrix1_row_count, _matrix1_col_count, MATRIX_TYPE_OPERAND);
+	if (matrix1) {
+		matrix1 = init_matrix_random(matrix1); // Initialize matrix with random values
+	}
+	else {
+		return nullptr;
+	}
+
+	// Create matrix operand 2
+	Matrix* matrix2 = create_matrix(SINGLE_INSTANCE, operation_id_counter, matrix_id_counter++,
+		_matrix1_row_count, _matrix1_col_count, MATRIX_TYPE_OPERAND);
+	matrix2 = init_matrix_random(matrix2); // Initialize matrix with random values
+	if (matrix2) {
+		matrix2 = init_matrix_random(matrix2); // Initialize matrix with random values
+	}
+	else {
+		return nullptr;
+	}
+
+	// Create result matrix
+
+	Matrix* result_matrix = nullptr;
+	result_matrix = allocate_matrix_with_matrix_data(operation_id_counter,
+		matrix_id_counter++, matrix1->rows, matrix2->cols, MATRIX_TYPE_RESULT);
+
+	// create operation
+	Operation* current_operation = create_operation(operation_id_counter, matrix1, matrix2, result_matrix);
+
+	if (!current_operation) {
+		fprintf(stderr, "Operation allocation failed!\n");
+		//deallocate_matrix(matrix1); // Free allocated memory for matrix 1
+		//deallocate_matrix(matrix2); // Free allocated memory for matrix 2
+		//deallocate_matrix(result_matrix); // Free allocated memory for result matrix
+		return nullptr;
+	}
+	operation_list_head = current_operation; // Set the head of the operation list
+
+	if (DEBUG_MATRIX) {
+		printf(" Ins: operation count:%d, current_operation: %p\n", operation_id_counter, current_operation); // Debug print
+	}
+
+	return operation_list_head; // Return success
+
 }
 
-/*int test_matrix_multiplication() {
-    // Test matrix multiplication logic here
-    // This is a placeholder for actual test code
-    //std::cout << "Testing matrix multiplication..." << std::endl;
-	printf("Testing matrix multiplication...\n");
-    int mat1_row_count = 20;
-    int mat1_col_count = 25;
+// Generate matrix test data and save to file
+Operation* generate_matrix_test_data(/*ProgramArguments* _arguments,  Operation* _operations, */
+	int _operation_count,
+	int _matrix1_row_count, int _matrix1_col_count,
+	int _matrix2_row_count, int _matrix2_col_count) {
 
-    int mat2_row_count = 25;
-    int mat2_col_count = 20;
+	int matrix_id_counter = 0;
+	int operation_count = 0;
+	short head = 0; // Head of the linked list of operations
+	Operation* previous_operation = nullptr; // Pointer to the previous operation
+	Operation* operation_list_head = nullptr; // Head of the linked list of operations
 
-    unsigned short matrix_id = 0;
-    unsigned short operation_id = 0;
+	if (DEBUG_MATRIX) {
+		printf("Generating matrix test data...\n");
+		//printf("Generating %d operations with the following matrix sizes:\n", _arguments->operation_count);
+		printf("Matrix 1: %d rows x %d columns\n", _matrix1_row_count, _matrix1_col_count);
+		printf("Matrix 2: %d rows x %d columns\n", _matrix2_row_count, _matrix2_col_count);
+	}
 
-    // Create 2x3 matrix (initialized to zeros)
-    Matrix* mat1 = create_matrix(matrix_id, operation_id, mat1_row_count, mat1_col_count, MATRIX_TYPE_OPERAND);
-    if (!mat1) {
-        //std::cerr << "Matrix allocation failed!" << std::endl;
-        fprintf(stderr, "Matrix allocation failed!\n");
-        return RESULT_ERROR;
-    }
+	for (int operation_id_counter = 0; operation_id_counter < _operation_count; operation_id_counter++) {
 
-    Matrix* mat2 = create_matrix(matrix_id, operation_id, mat2_row_count, mat2_col_count, MATRIX_TYPE_OPERAND);
-    if (!mat2) {
-        //std::cerr << "Matrix allocation failed!" << std::endl;
-        fprintf(stderr, "Matrix allocation failed!\n");
-        return RESULT_ERROR;
-    }
-
-    Matrix* mat_result = create_matrix(matrix_id, operation_id, mat1_row_count, mat2_col_count, MATRIX_TYPE_RESULT);
-    if (mat_result == NULL) {
-        //std::cerr << "Matrix allocation failed!" << std::endl;
-        fprintf(stderr, "Matrix allocation failed!\n");
-        return RESULT_ERROR;
-    }
-
-    unsigned short result;
-
-    result = init_matrix_operand1(mat1);
-    result = init_matrix_operand2(mat2);
-
-    // Perform matrix multiplication
-    unsigned int mul_result = multiply_matrices(mat1, mat2, mat_result);
-
-    // Read values
-    //std::cout << "Matrix Result:\n";
-	printf("Result Matrix\n");
-    matrix_print_info(mat_result);
-
-    // Free memory
-    free_matrix(mat1);
-    free_matrix(mat2);
-    free_matrix(mat_result);
-    return 0;
-}*/
-
-
-int generate_matrix_test_data(ProgramArguments* _arguments, Operation* _operations) {
-
-    int operation_count = 0;
-    int matrix_id_counter = 0;
-
-    // Generate matrix test data and save to file
-    printf("Generating matrix test data...\n");
-	printf("Generating %d operations with the following matrix sizes:\n", _arguments->operation_count);
-    printf("Matrix 1: %d rows x %d columns\n", _arguments->mat1_row_count, _arguments->mat1_col_count);
-    printf("Matrix 2: %d rows x %d columns\n", _arguments->mat2_row_count, _arguments->mat2_col_count);
-
-    for (int operation_id_counter = 0; operation_id_counter < _arguments->operation_count; operation_id_counter++) {
-
+		int matrix_id_counter = 0;
+		if (DEBUG_MEMORY_ALLOC) {
+			printf("\n<------ Operation Id %d Creation ---------> \n", operation_id_counter);
+		}
 		// Create matrix operand 1 
-        Matrix* matrix_operand_1 = create_matrix(matrix_id_counter++, operation_id_counter, _arguments->mat1_row_count, _arguments->mat1_col_count, MATRIX_TYPE_OPERAND);
-        if (!matrix_operand_1) {
-            //std::cerr << "Matrix allocation failed!" << std::endl;
-			fprintf(stderr, "Matrix allocation failed!\n");
-            return -1;
-        }
-		init_matrix_operand1(matrix_operand_1);
+		Matrix* matrix1 = create_matrix(SINGLE_INSTANCE, operation_id_counter, matrix_id_counter++,
+			_matrix1_row_count, _matrix1_col_count, MATRIX_TYPE_OPERAND);
+		if (matrix1) {
+			matrix1 = init_matrix_random(matrix1); // Initialize matrix with random values
+		}
+		else {
+			return nullptr;
+		}
 
-        // Create matrix operand 2
-        Matrix* matrix_operand_2 = create_matrix(matrix_id_counter++, operation_id_counter, _arguments->mat2_row_count, _arguments->mat2_col_count, MATRIX_TYPE_OPERAND);
-        if (!matrix_operand_2) {
-            //std::cerr << "Matrix allocation failed!" << std::endl;
-            fprintf(stderr, "Matrix allocation failed!\n");
-            return -1;
-        }
-		init_matrix_operand2(matrix_operand_2);
+		// Create matrix operand 2
+		Matrix* matrix2 = create_matrix(SINGLE_INSTANCE, operation_id_counter, matrix_id_counter++,
+			_matrix2_row_count, _matrix2_col_count, MATRIX_TYPE_OPERAND);
+		matrix2 = init_matrix_random(matrix2); // Initialize matrix with random values
+		if (matrix2) {
+			matrix2 = init_matrix_random(matrix2); // Initialize matrix with random values
+		}
+		else {
+			return nullptr;
+		}
 
-        // Create matrix result
-        Matrix* matrix_result = create_matrix(matrix_id_counter++, operation_id_counter, _arguments->mat1_row_count, _arguments->mat2_col_count, MATRIX_TYPE_RESULT);
-        if (!matrix_result) {
-            //std::cerr << "Matrix allocation failed!" << std::endl;
-            fprintf(stderr, "Matrix allocation failed!\n");
-            return -1;
-        }
-        
-		if (multiply_matrices(matrix_operand_1, matrix_operand_2, matrix_result) != MATX_OP_SUCCESS ) {
-            //std::cerr << "Matrix multiplication failed!" << std::endl;
-            fprintf(stderr, "Matrix multiplication failed!\n");
-            free_matrix(matrix_operand_1);
-            free_matrix(matrix_operand_2);
-            free_matrix(matrix_result);
-            return -1;
-        }
+		// Create result matrix
 
+		Matrix* result_matrix = nullptr;
+		result_matrix = allocate_matrix_with_matrix_data(operation_id_counter,
+			matrix_id_counter++, matrix1->rows, matrix2->cols, MATRIX_TYPE_RESULT);
+
+		result_matrix = calc_matrix_multiplication(matrix1, matrix2, result_matrix); // Calculate the result matrix
+		
 		// create operation
-		Operation* current_operation = (Operation*)calloc(1, sizeof(Operation)); // Allocate memory for the operation
-        if (!current_operation) {
-            //std::cerr << "Operation allocation failed!" << std::endl;
+		Operation* current_operation = create_operation(operation_id_counter, matrix1, matrix2, result_matrix);
+		
+		if (!current_operation) {
 			fprintf(stderr, "Operation allocation failed!\n");
-            free_matrix(matrix_operand_1);
-            free_matrix(matrix_operand_2);
-            free_matrix(matrix_result);
-            return -1;
-        }
- 
-        current_operation->operation_id = operation_id_counter; // Set operation ID
-        current_operation->operand1 = matrix_operand_1; // Set operand 1
-        current_operation->operand2 = matrix_operand_2; // Set operand 2
-        current_operation->result = matrix_result; // Set result
+			//deallocate_matrix(matrix1); // Free allocated memory for matrix 1
+			//deallocate_matrix(matrix2); // Free allocated memory for matrix 2
+			//deallocate_matrix(result_matrix); // Free allocated memory for result matrix
+			return nullptr;
+		}
 
-        _operations[operation_count] = *current_operation; // Store the current operation in the _operations array
 
-        operation_count++;
-        
-    }
+		if (head == 0) {									// if this is the first operation
+			head = 1;										// Set head to 1 if this is the first operation
+			operation_list_head = current_operation;		// Set the head of the operation list
+			previous_operation = current_operation;			// Set the previous operation to the current one, only done once
+		}
+		else {												// if this is not the first operation
+			previous_operation->next = current_operation;	// Link the previous operation to the current one
+			previous_operation = current_operation;			// Update the previous operation to the current one
+		}
+		
+		if (DEBUG_MEMORY_ALLOC) {
+			printf("\n<------ Operation Id %d Creation End  ---------> \n\n", operation_id_counter);
+		}
+		////assert(_operations != NULL); // Ensure _operations is not null
+		////_operations[operation_count] = *current_operation; // Store the current operation in the _operations array
 
-    return operation_count; // Return success
+		if (DEBUG_MATRIX) {
+			printf(" Ins: operation count:%d, current_operation: %p\n", operation_id_counter, current_operation); // Debug print
+		}
+
+
+		operation_count++;
+		printf("\n");
+	}
+
+	return operation_list_head; // Return success
 
 }
 
-int main(int argc, char* argv[]) {
-   
+int generate_mode(const char* _filename, const ProgramArguments* _arguments) {
+
+	printf("Executing in generate mode with filename: %s\n", _filename);
+
+	char* matrix_filename = (char*) c_alloc(MAX_FILENAME_LENGTH, sizeof(char), "generate_mode", 0); // Allocate memory for filename
+    strcpy(matrix_filename, _filename);       // Copy from arguments the filename to save the matrices 
+	
+
+    Operation* operation_list_head = generate_matrix_test_data( /*arguments, operations, , operation_count, */
+		_arguments->operation_count,
+        _arguments->mat1_row_count, _arguments->mat1_col_count, 
+        _arguments->mat2_row_count, _arguments->mat2_col_count);
+
+	// used for testing purposes only, to generate a single operation
+	//Operation* operation_list_head = generate_single_operation_test_data(_arguments->mat1_row_count, _arguments->mat1_col_count,
+	//	_arguments->mat2_row_count, _arguments->mat2_col_count);
+
+	assert(operation_list_head != nullptr); // Ensure operation list is not null
+
+	// clear previous file for writing, creating it if it doesn't exist
+	FILE* _dummy_file_variable = open_matrix_file(matrix_filename, "w");
+	
+	// Open the file for writing in append mode
+	const char* file_open_option = "ab"; // File operation option for writing
+	FILE* _file_to_write_to = open_matrix_file(matrix_filename, file_open_option);
+	if (_file_to_write_to == nullptr) {
+		f_ree(matrix_filename); // Free allocated memory for filename
+		deallocate_all_operations(operation_list_head); // Deallocate all operations in the list
+		return EXIT_FAILURE; // Exit with failure code
+	}
+
+	// Save the operation list to file
+	int save_result = save_matrix_operations(operation_list_head, _file_to_write_to, matrix_filename);
+	(assert(save_result == EXIT_SUCCESS)); // Ensure save operation was successful
+
+	f_ree(matrix_filename); // Free allocated memory for filename
+	deallocate_all_operations(operation_list_head); // Deallocate all operations in the list
+
+    printf("Completed executing generate mode with filename: %s\n", _filename);
+
+    // save operation list to file
+    return EXIT_SUCCESS; // Placeholder for generate mode logic
+}
+
+int execute_test(int argc, char* argv[]) {
+
+	return EXIT_FAILURE; // Placeholder for test execution logic
+}
+
+int execute_program(int argc, char* argv[]) {
+
+    // declare parameter variables
+    char matrix_filename[64] = { 0 }; // Buffer for filename
+    int matrix1_row_count = 0;
+    int matrix1_col_count = 0;
+    int matrix2_row_count = 0;
+    int matrix2_col_count = 0;
+
     int result = 0;
     int operation_count = 0;
 
-    ProgramArguments* arguments = create_program_arguments();
-    result = parse_arguments(argc, argv, arguments);
-	
-    Operation* operations = (Operation*) calloc(MAX_OPERATION_COUNT, sizeof(Operation*));
+    ProgramArguments* arguments = initialize_program_arguments();
 
-	//int result = test_persistence(operations);
-	
-    if (arguments->g_flag == 1) {
-        
-        char* matrix_filename = arguments->filename;
-        //printf("Operation 3 result matrix value: %d\n", operations[3].result->uint_data);
-
-		printf("Running in generate mode...\nGenerating matrix data\n");
-        operation_count = generate_matrix_test_data(arguments, operations);
-
-        FILE* file = fopen(matrix_filename, "w");
-
-        if (file == nullptr) {
-            fprintf(stderr, "Error opening file %s for writing\n", matrix_filename);
-            return -1; // Exit with error code
-        }
-        else {
-            fclose(file);
-			printf("\nSaving generated matrix data to file : %s containing %d operations\n", matrix_filename, operation_count );
-            for (int i = 0; i < operation_count; i++, operations++) {
-                //operation_print_info(&operations[i]);
-                int save_result = save_operation_to_file(matrix_filename, operations); //TODO: remove this print, just for testing
-            }
-        }
+    // Initialize program arguments
+    arguments = initialize_program_arguments();
+    if (arguments == nullptr) {
+        fprintf(stderr, "Failed to initialize program arguments.\n");
+        return EXIT_FAILURE;
     }
-    else if (arguments->l_flag == 1) {
-        // Load matrix from file
-        char* matrix_filename = arguments->filename;
-        printf("Loading matrix from file: %s\n", matrix_filename);
-        result = test_persistence(matrix_filename, operations);
-        if (result != 0) {
-            fprintf(stderr, "Error loading operations from file.\n");
-            return -1; // Exit with error code
-        }
-        
-        for (int i = 0; i < operation_count; i++) {
-			operation_print_info(&operations[i]);       
-        }
-	}
 
-	result = 0;
-
-	//int result = test_matrix_multiplication();
+    result = parse_arguments(argc, argv, arguments);
+    if (arguments->generate_matrix_flag == 1) {             // if the execution mode is generate
+		generate_mode(arguments->filename, arguments); // Generate matrix test data and save to file
+    }
 
     return result;
-} 
+    //return old_main(argc, argv);
+}
+
+int main(int argc, char* argv[]) {
+
+	int result = -1;
+    if (EXECUTE_TEST) {
+        result = execute_test(argc, argv); // Execute test if flag is set
+	}
+    else {
+		result = execute_program(argc, argv); // Execute main program logic
+		report_leaks("Final exit in main\n"); // Report memory leaks at the end of the program
+    }
+
+	return result;
+
+}

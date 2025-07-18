@@ -18,13 +18,28 @@
     <ClCompile Include="common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Matrix.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Persistence.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OldDataPump.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MemTrack.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MatrixAllocation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="DataPump.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ProgramArguments.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,10 +47,25 @@
     <ClInclude Include="common.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Persistence.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MemTrack.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="Matrix.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Persistence.h">
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MatrixAllocation.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ProgramArguments.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Parameters.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -43,5 +73,14 @@
     <Text Include="MatrixSample.txt">
       <Filter>Source Files</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DataPump.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="OldMatrix.cpp.bak" />
+    <None Include="OldMatrix.h.bak" />
   </ItemGroup>
 </Project>

@@ -1,24 +1,35 @@
 
 #include <iostream>
-#include <cstdlib>   // For calloc, calloc, free
+#include <iomanip> // Required for std::hex and std::setw
+
+#include <cstdlib>   
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>    // For time, srand
 #include "common.h"
+#include "MemTrack.h"
 
-
-unsigned int generate_truly_random_uint() {
-    static int seeded = 0;
-    if (!seeded) {
-        srand((unsigned int)time(NULL)); // Seed using current time
-        seeded = 1;
+void debug_print(const char* _message_format, const char* _message) {
+    if (DEBUG_1) {
+        printf(_message_format, _message);
     }
+}
 
-    unsigned int num = 0;
-    for (size_t i = 0; i < sizeof(unsigned int); i++) {
-        num = (num << 8) | (rand() & 0xFF); // Combine random bytes
+void printMemoryContents(const void* address, size_t size) {
+    const unsigned char* ptr = static_cast<const unsigned char*>(address);
+
+    std::cout << "Memory contents at " << address << " (size: " << size << " bytes):" << std::endl;
+
+    for (size_t i = 0; i < size; ++i) {
+        // Print address offset
+        if (i % 16 == 0) {
+            std::cout << std::endl << std::hex << std::setw(8) << std::setfill('0') << i << ": ";
+        }
+
+        // Print byte in hexadecimal
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(ptr[i]) << " ";
     }
-    return num;
+    std::cout << std::endl;
 }
 
 
@@ -71,9 +82,29 @@ int print_message(int message_type, char* message) {
 //    return 0; // Success
 //}
 
+unsigned int generate_truly_random_uint(void) {
+    static int seeded = 0;
+    if (!seeded) {
+        srand((unsigned int)time(NULL)); // Seed using current time
+        seeded = 1;
+    }
+
+    unsigned int num = 0;
+    for (size_t i = 0; i < sizeof(unsigned int); i++) {
+        num = (num << 8) | (rand() & 0xFF); // Combine random bytes
+    }
+    return num;
+}
+
+unsigned short generate_random_ushort(void) {
+    unsigned int r1 = (unsigned int)generate_truly_random_uint();     //todo: use better random number generator
+    unsigned int r2 = (unsigned int)generate_truly_random_uint();
+    return (unsigned short int)(((r1 >> 7) << 8) | (r2 >> 7));
+}
+
 char* ushort_to_string(unsigned short int num) {
     if (num == 0) {
-        char* str = (char*) calloc(1, 2);
+        char* str = (char*) c_alloc(1, 2, "ushort_to_string", 0);
         if (str == NULL) return NULL;
         str[0] = '0';
         str[1] = '\0';
@@ -89,7 +120,7 @@ char* ushort_to_string(unsigned short int num) {
     }
 
     // Allocate memory
-    char* str = (char*) calloc(1, len + 1);
+    char* str = (char*) c_alloc(1, len + 1, "ushort_to_string", 0);
     if (str == NULL) return NULL;
 
     // Convert digits
@@ -107,7 +138,7 @@ char* ushort_to_string(unsigned short int num) {
 
 char* uint_to_string(unsigned int num) {
     if (num == 0) {
-        char* str = (char*) calloc(SINGLE_INSTANCE, 2);
+        char* str = (char*) c_alloc(SINGLE_INSTANCE, 2, "uint_to_string", 0);
         if (str == NULL) return NULL;
         str[0] = '0';
         str[1] = '\0';
@@ -123,7 +154,7 @@ char* uint_to_string(unsigned int num) {
     }
 
     // Allocate memory
-    char* str = (char*) calloc(SINGLE_INSTANCE, len + 1);
+    char* str = (char*) c_alloc(SINGLE_INSTANCE, len + 1, "uint_to_string", 0);
     if (str == NULL) return NULL;
 
     // Convert digits
@@ -138,6 +169,7 @@ char* uint_to_string(unsigned int num) {
 
     return str;
 }
+
 //unsigned short int generate_random_ushort(void) {
 //    unsigned int r1 = (unsigned int)rand();
 //    unsigned int r2 = (unsigned int)rand();

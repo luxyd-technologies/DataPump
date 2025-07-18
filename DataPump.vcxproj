@@ -224,17 +224,34 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="common.cpp" />
-    <ClCompile Include="Matrix.cpp" />
-    <ClCompile Include="Persistence.cpp" />
     <ClCompile Include="DataPump.cpp" />
+    <ClCompile Include="MainTest.cpp" />
+    <ClCompile Include="Matrix.cpp" />
+    <ClCompile Include="MatrixAllocation.cpp" />
+    <ClCompile Include="MemTrack.cpp" />
+    <ClCompile Include="Persistence.cpp" />
+    <ClCompile Include="OldDataPump.cpp" />
+    <ClCompile Include="ProgramArguments.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h" />
+    <ClInclude Include="Parameters.h" />
     <ClInclude Include="Matrix.h" />
+    <ClInclude Include="MatrixAllocation.h" />
+    <ClInclude Include="MemTrack.h" />
     <ClInclude Include="Persistence.h" />
+    <ClInclude Include="ProgramArguments.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="MatrixSample.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DataPump.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="OldMatrix.cpp.bak" />
+    <None Include="OldMatrix.h.bak" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

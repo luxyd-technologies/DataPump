@@ -15,22 +15,22 @@ void debug_print(const char* _message_format, const char* _message) {
     }
 }
 
-void printMemoryContents(const void* address, size_t size) {
-    const unsigned char* ptr = static_cast<const unsigned char*>(address);
-
-    std::cout << "Memory contents at " << address << " (size: " << size << " bytes):" << std::endl;
-
-    for (size_t i = 0; i < size; ++i) {
-        // Print address offset
-        if (i % 16 == 0) {
-            std::cout << std::endl << std::hex << std::setw(8) << std::setfill('0') << i << ": ";
-        }
-
-        // Print byte in hexadecimal
-        std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(ptr[i]) << " ";
-    }
-    std::cout << std::endl;
-}
+//void printMemoryContents(const void* address, size_t size) {
+//    const unsigned char* ptr = static_cast<const unsigned char*>(address);
+//
+//    std::cout << "Memory contents at " << address << " (size: " << size << " bytes):" << std::endl;
+//
+//    for (size_t i = 0; i < size; ++i) {
+//        // Print address offset
+//        if (i % 16 == 0) {
+//            std::cout << std::endl << std::hex << std::setw(8) << std::setfill('0') << i << ": ";
+//        }
+//
+//        // Print byte in hexadecimal
+//        std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(ptr[i]) << " ";
+//    }
+//    std::cout << std::endl;
+//}
 
 
 int print_message(int message_type, char* message) {

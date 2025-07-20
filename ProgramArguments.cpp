@@ -13,7 +13,7 @@ ProgramArguments* initialize_program_arguments(void) {
     ProgramArguments* args = new ProgramArguments();
     char _filename[] = "matrix_data.txt"; // Default filename
     args->generate_matrix_flag = 0;
-    args->l_flag = 0;
+    args->load_file_flag = 0;
     args->n_flag = 0;
     args->operation_count = MAX_OPERATION_COUNT;   // default operation count
     args->r1_flag = 0;
@@ -33,7 +33,7 @@ ProgramArguments* initialize_program_arguments(void) {
 int parse_arguments(int argc, char* argv[], ProgramArguments* _arguments) {
 
     char*   filename = NULL;
-    int     generate_matrix_flag = 0, l_flag = 0, n_flag = 0, r1_flag = 0, c1_flag = 0, r2_flag = 0, c2_flag = 0, f_flag = 0; // local flag variables
+    int     generate_matrix_flag = 0, load_file_flag = 0, n_flag = 0, r1_flag = 0, c1_flag = 0, r2_flag = 0, c2_flag = 0, f_flag = 0; // local flag variables
 
     // Parse command-line arguments
     for (int i = 1; i < argc; i++) {
@@ -44,8 +44,8 @@ int parse_arguments(int argc, char* argv[], ProgramArguments* _arguments) {
         }
 
         else if (strcmp(argv[i], "-l") == 0) {      // Load matrix from file
-            l_flag = 1;
-            _arguments->l_flag = l_flag;
+            load_file_flag = 1;
+            _arguments->load_file_flag = load_file_flag;
             printf("l flag set\n");
         }
 
@@ -131,7 +131,7 @@ int parse_arguments(int argc, char* argv[], ProgramArguments* _arguments) {
         return -1;
     }
 
-    if ((l_flag == 1) &&
+    if ((load_file_flag == 1) &&
         ((generate_matrix_flag == 1) || (mat_check != 0))) {
         fprintf(stderr, "Error: Read from file option (-l) cannot be used together with -g and/or parameterized matrix sizes\n");
         return -1;

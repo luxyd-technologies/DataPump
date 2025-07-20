@@ -106,21 +106,26 @@ void tracked_f_ree(void* ptr, const char* file, int line) {
         if ((*node)->ptr == ptr) {
             Allocation* tmp = *node;
             *node = tmp->next;
-			printf("Freeing %zu bytes at %p (allocated at %s:%d) \n", tmp->size, ptr, tmp->file, tmp->line);
+            if (DEBUG_MEMORY_ALLOC) {
+                printf("Freeing %zu bytes at %p (allocated at %s:%d) \n", tmp->size, ptr, tmp->file, tmp->line);
+            }
 			// TODO : print out memory data for tmp->size bytes
             //printMemoryContents(ptr, tmp->size);
             free(tmp->file);
             free(tmp);
-			//report_leaks(); // Report leaks after freeing
-            try {
-                free(ptr); // Actual memory deallocation
-            }
-            catch (const std::runtime_error& e) {
-                std::cerr << "Caught exception type:" << e.what() << std::endl;
-            }
-            catch (...) { // Catch-all handler for any other exceptions
-                std::cerr << "Caught unknown error type\n"  << std::endl;
-            }
+
+            free(ptr);
+            
+            // commented out the C++ try catch block and replaced with simple free(ptr) above
+            //try {
+                //free(ptr); // Actual memory deallocation
+            //}
+            //catch (const std::runtime_error& e) {
+            //    std::cerr << "Caught exception type:" << e.what() << std::endl;
+            //}
+            //catch (...) { // Catch-all handler for any other exceptions
+            //    std::cerr << "Caught unknown error type\n"  << std::endl;
+            //}
             //report_leaks("Just before track free function exit point"); // Report leaks before actual free
 
             return;

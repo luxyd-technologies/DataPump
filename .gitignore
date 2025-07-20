@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Mat40x20_20x40.txt
+/Mat20x1_1x25.txt
+/OldDataPump.cpp
+/DataPump.vcxproj.filters
+/DataPump.vcxproj

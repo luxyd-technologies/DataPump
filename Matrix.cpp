@@ -100,7 +100,6 @@ void matrix_set_uint(Matrix* m, int row, int col, unsigned int value) {
 	m->data->uint_data[row * m->cols + col] = value;
 }
 
-
 Matrix* init_matrix_zeroes(Matrix* _matrix) {
 
 	// set the matrix header data
@@ -136,57 +135,37 @@ Matrix* init_matrix_random(Matrix* _matrix) {
 
 	// set the matrix header data
 	if (_matrix != nullptr) {
-		// set the matrix value data
-		//for (int row_counter = 0; row_counter < _matrix->rows; ++row_counter) {
-		//	for (int column_counter = 0; column_counter < _matrix->cols; ++column_counter) {
-		//		if (_matrix->matrix_type == MATRIX_TYPE_OPERAND) {
-		//			matrix_set_ushort(_matrix, row_counter, column_counter, generate_random_ushort());
-		//			if (DEBUG_MATRIX_INIT) {
-		//				printf("%hu,", matrix_get_ushort(_matrix, row_counter, column_counter)); // Print the value for debugging
-		//			}
-		//		}
-		//		else if (_matrix->matrix_type == MATRIX_TYPE_RESULT) {
-		//			matrix_set_uint(_matrix, row_counter, column_counter, generate_truly_random_uint());
-		//			if (DEBUG_MATRIX_INIT) {
-		//				printf("%hu,", matrix_get_uint(_matrix, row_counter, column_counter)); // Print the value for debugging
-		//			}
-		//		}
-		//	}
-			for (int row_counter = 0; row_counter < _matrix->rows; row_counter++) {
-				for (int column_counter = 0; column_counter < _matrix->cols; column_counter++) {
-					if (_matrix->matrix_type == MATRIX_TYPE_OPERAND) {
-						matrix_set_ushort(_matrix, row_counter, column_counter, generate_random_ushort());
-						if (DEBUG_MATRIX_INIT) {
-							printf("%hu,", matrix_get_ushort(_matrix, row_counter, column_counter)); // Print the value for debugging
-						}
-					}
-					else if (_matrix->matrix_type == MATRIX_TYPE_RESULT) {
-						matrix_set_uint(_matrix, row_counter, column_counter, generate_truly_random_uint());
-						if (DEBUG_MATRIX_INIT) {
-							printf("%u,", matrix_get_uint(_matrix, row_counter, column_counter)); // Print the value for debugging
-						}
+		for (int row_counter = 0; row_counter < _matrix->rows; row_counter++) {
+			for (int column_counter = 0; column_counter < _matrix->cols; column_counter++) {
+				if (_matrix->matrix_type == MATRIX_TYPE_OPERAND) {
+					matrix_set_ushort(_matrix, row_counter, column_counter, generate_random_ushort());
+					if (DEBUG_MATRIX_INIT) {
+						printf("%hu,", matrix_get_ushort(_matrix, row_counter, column_counter)); // Print the value for debugging
 					}
 				}
+				else if (_matrix->matrix_type == MATRIX_TYPE_RESULT) {
+					matrix_set_uint(_matrix, row_counter, column_counter, generate_truly_random_uint());
+					if (DEBUG_MATRIX_INIT) {
+						printf("%u,", matrix_get_uint(_matrix, row_counter, column_counter)); // Print the value for debugging
+					}
+				}
+			}
 			if (DEBUG_MATRIX_INIT) {
 				printf(" \n");
 			}
-		}
-		if (DEBUG_MATRIX_INIT) {
-			printf(" \n");
 		}
 	}
 	return _matrix;
 }
 
-
 Matrix* calc_matrix_multiplication(Matrix* _operand1, Matrix* _operand2, Matrix* _result_matrix) {
 
 	if (_operand1 == NULL || _operand2 == NULL) {
-		std::cerr << "One of the operands is NULL." << std::endl;
+		fprintf(stderr, "One of the operands is NULL\n");
 		return NULL;
 	}
 	if (_operand1->cols != _operand2->rows) {
-		std::cerr << "Matrix multiplication not possible due to incompatible dimensions." << std::endl;
+		fprintf(stderr, "Matrix multiplication not possible due to incompatible dimension\n");
 		return NULL;
 	}
 
@@ -251,11 +230,45 @@ Matrix* create_matrix(short _mode, unsigned short _operation_id, unsigned short 
 	return matrix;
 }
 
-Operation* create_operation(int _operation_id, Matrix* _operand1, Matrix* _operand2, Matrix* _result_matrix) { 
+int attach_matrix_to_operation(Operation* _operation, Matrix* _matrix, int _matrix_no) {
 
+	if (_operation == nullptr || _matrix == nullptr) {
+		fprintf(stderr, "Invalid operation or matrix pointer.\n");
+		return EXIT_FAILURE;
+	}
+
+	switch (_matrix_no) {
+		case 1:
+			_operation->operand1 = _matrix; // Attach the first operand
+			break;
+		case 2:
+			_operation->operand2 = _matrix; // Attach the second operand
+			break;
+		case 3:
+			_operation->result = _matrix; // Attach the result matrix
+			break;
+		default:
+			fprintf(stderr, "Invalid operand number: %d. Use 1 or 2.\n", _matrix_no);
+			return EXIT_FAILURE;
+	}
+	_operation->total_allocated_memory_bytes += _matrix->total_allocated_memory_bytes;
+
+	if (DEBUG_MATRIX) {
+		printf("Attached matrix id: %d to operation id: %d as operand %d\n", _matrix->matrix_id, _operation->operation_id, _matrix_no);
+	}
+	return EXIT_SUCCESS;
+}
+
+Operation* create_operation(int _operation_id, Matrix* _operand1, Matrix* _operand2, Matrix* _result_matrix) {
+
+	Operation* this_operation = nullptr;
 	// allocate memory for operation header
-	Operation* this_operation = allocate_operation(_operation_id, _operand1, _operand2, _result_matrix);
-
+	if (_operand1 == nullptr || _operand2 == nullptr || _result_matrix == nullptr) { // if operands and result not created yet
+		this_operation = allocate_operation_empty(_operation_id);					 // create an empty operation	
+	}
+	else {																			// else create a full operation
+		this_operation = allocate_operation(_operation_id, _operand1, _operand2, _result_matrix);
+	}
 
 	if (!this_operation) {
 		fprintf(stderr, "Memory allocation for operation failed\n");
@@ -269,6 +282,7 @@ Operation* create_operation(int _operation_id, Matrix* _operand1, Matrix* _opera
 
 	return this_operation;
 }
+
 Operation* create_operation_list() { return nullptr; }
 
 

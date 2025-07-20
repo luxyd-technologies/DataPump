@@ -59,11 +59,11 @@ constexpr int EXECUTE_TEST = 0; // Maximum number of operations to handle
 //
 //        }
 //    }
-//    else if (arguments->l_flag == 1) {
+//    else if (arguments->load_file_flag == 1) {
 //        // Load matrix from file
 //        char* matrix_filename = arguments->filename;
 //        printf("Loading matrix from file: %s\n", matrix_filename);
-//        result = test_persistence(matrix_filename, operations);
+//        result = load_matrix_test_data(matrix_filename, operations);
 //        if (result != 0) {
 //            fprintf(stderr, "Error loading operations from file.\n");
 //            return -1; // Exit with error code
@@ -235,19 +235,19 @@ Operation* generate_matrix_test_data(/*ProgramArguments* _arguments,  Operation*
 
 
 		operation_count++;
-		printf("\n");
 	}
 
 	return operation_list_head; // Return success
 
 }
 
-int generate_mode(const char* _filename, const ProgramArguments* _arguments) {
+int generate_mode(const ProgramArguments* _arguments, Operation* _operation_list_to_return) {
 
-	printf("Executing in generate mode with filename: %s\n", _filename);
+	const char* output_filename = _arguments->filename; // Get the filename from arguments
+	printf("Executing in generate mode with filename: %s\n", output_filename);
 
 	char* matrix_filename = (char*) c_alloc(MAX_FILENAME_LENGTH, sizeof(char), "generate_mode", 0); // Allocate memory for filename
-    strcpy(matrix_filename, _filename);       // Copy from arguments the filename to save the matrices 
+    strcpy(matrix_filename, output_filename);       // Copy from arguments the filename to save the matrices 
 	
 
     Operation* operation_list_head = generate_matrix_test_data( /*arguments, operations, , operation_count, */
@@ -275,15 +275,71 @@ int generate_mode(const char* _filename, const ProgramArguments* _arguments) {
 
 	// Save the operation list to file
 	int save_result = save_matrix_operations(operation_list_head, _file_to_write_to, matrix_filename);
-	(assert(save_result == EXIT_SUCCESS)); // Ensure save operation was successful
+	//(assert(save_result == EXIT_SUCCESS)); // Ensure save operation was successful
 
 	f_ree(matrix_filename); // Free allocated memory for filename
-	deallocate_all_operations(operation_list_head); // Deallocate all operations in the list
+	//deallocate_all_operations(operation_list_head); // Deallocate all operations in the list
+	_operation_list_to_return = operation_list_head;
 
-    printf("Completed executing generate mode with filename: %s\n", _filename);
+    printf("Completed executing generate mode with filename: %s\n", output_filename);
 
     // save operation list to file
     return EXIT_SUCCESS; // Placeholder for generate mode logic
+}
+
+//int load_mode(const char* output_filename, const ProgramArguments* _arguments) {
+Operation* load_mode(const char* output_filename, const ProgramArguments * _arguments) {
+
+	printf("Executing in loading mode with filename: %s\n", _arguments->filename);
+
+	// Load matrix from file
+	char* matrix_filename = (char*) c_alloc(MAX_FILENAME_LENGTH, sizeof(char), "load_mode", 0); // Allocate memory for filename
+	strcpy(matrix_filename, _arguments->filename); // Copy from arguments the filename to load the matrices
+
+	const char* file_open_option = "r"; // File operation option for writing
+	FILE* file_to_read_from = open_matrix_file(matrix_filename, file_open_option);
+	if (file_to_read_from == nullptr) {
+		f_ree(matrix_filename); // Free allocated memory for filename
+		//return EXIT_FAILURE; // Exit with failure code
+		return nullptr;
+	}
+
+	Operation* operation_list_head = nullptr;
+	operation_list_head = load_matrix_test_data(file_to_read_from, operation_list_head);
+	//int result = load_matrix_test_data(file_to_read_from, operation_list_head);
+	if (operation_list_head == nullptr) {
+		fprintf(stderr, "Error loading operations from file\n");
+		f_ree(matrix_filename); // Free allocated memory for filename
+		fclose(file_to_read_from); // Close the file
+		//return EXIT_FAILURE; // Exit with error code
+		return nullptr;
+	}
+
+	// clean up
+	fclose(file_to_read_from); // Close the file after reading
+	f_ree(matrix_filename); // Free allocated memory for filename
+
+	// Print loaded operations for debugging
+	if (DEBUG_PERSISTENCE) {
+		Operation* current_operation = operation_list_head;
+		while (current_operation != nullptr) {
+			operation_print_info(current_operation); // Print operation info
+			current_operation = current_operation->next; // Move to the next operation
+		}
+	}
+
+	// --- section commented out since we are returning the operations list -- 
+	//report_leaks("After loading operations from file\n"); // Report memory leaks after loading operations
+	//// Deallocate all operations in the list
+	//deallocate_all_operations(operation_list_head); // Deallocate all operations in the list
+	// finish cleaning up
+	//report_leaks("After deallocation\n"); // Report memory leaks at the end of the program
+	// -- end commented out section
+
+	printf("Completed executing load mode with filename: %s\n", output_filename);
+	//return EXIT_SUCCESS; // Placeholder for load mode logic
+
+	return operation_list_head;
 }
 
 int execute_test(int argc, char* argv[]) {
@@ -291,7 +347,7 @@ int execute_test(int argc, char* argv[]) {
 	return EXIT_FAILURE; // Placeholder for test execution logic
 }
 
-int execute_program(int argc, char* argv[]) {
+int execute_program(int argc, char* argv[], Operation* _operation_list_to_return) {
 
     // declare parameter variables
     char matrix_filename[64] = { 0 }; // Buffer for filename
@@ -304,6 +360,7 @@ int execute_program(int argc, char* argv[]) {
     int operation_count = 0;
 
     ProgramArguments* arguments = initialize_program_arguments();
+	Operation* operation_list_to_return = nullptr;
 
     // Initialize program arguments
     arguments = initialize_program_arguments();
@@ -314,24 +371,53 @@ int execute_program(int argc, char* argv[]) {
 
     result = parse_arguments(argc, argv, arguments);
     if (arguments->generate_matrix_flag == 1) {             // if the execution mode is generate
-		generate_mode(arguments->filename, arguments); // Generate matrix test data and save to file
+		result = generate_mode(arguments, _operation_list_to_return); // Generate matrix test data and save to file
+		if (result == EXIT_FAILURE) {
+			fprintf(stderr, "Error generating operations\n");
+			return EXIT_FAILURE; // Exit with error code
+		}
     }
+	else if (arguments->load_file_flag == 1) {
+		
+		//result = load_mode(arguments->filename, arguments); // Load matrix from file and process operations
+		//if (result == EXIT_FAILURE) {
+		//	fprintf(stderr, "Error loading operations from file\n");
+		//	return EXIT_FAILURE; // Exit with error code
+		//}
+
+		// Load matrix from file
+		_operation_list_to_return = load_mode(arguments->filename, arguments); // Load matrix from file and process operations
+		if (!_operation_list_to_return) {
+			fprintf(stderr, "Error loading operations from file\n");
+			return EXIT_FAILURE; // Exit with error code
+		}
+	}
+	else {
+		fprintf(stderr, "No valid command line arguments provided\n");
+		return EXIT_FAILURE;
+	}
 
     return result;
-    //return old_main(argc, argv);
+
 }
 
+
+// this is the main program
 int main(int argc, char* argv[]) {
 
-	int result = -1;
+	int result = EXIT_FAILURE;
+	Operation* operation_list = nullptr;
+
     if (EXECUTE_TEST) {
         result = execute_test(argc, argv); // Execute test if flag is set
 	}
     else {
-		result = execute_program(argc, argv); // Execute main program logic
-		report_leaks("Final exit in main\n"); // Report memory leaks at the end of the program
+
+		result = execute_program(argc, argv, operation_list); // Execute main program logic
+		// here do what is required
+		//report_leaks("Final exit in main\n"); // Report memory leaks at the end of the program
     }
 
-	return result;
+	return EXIT_SUCCESS;
 
 }

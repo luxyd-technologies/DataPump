@@ -8,7 +8,7 @@
 struct ProgramArguments {
 
     int     generate_matrix_flag = 0;            // generate matrix test data file
-    int     l_flag = 0;            // load and read matrix test data file
+    int     load_file_flag = 0;            // load and read matrix test data file
     int     n_flag = 0;
     int     operation_count = 0;   //default_operation to generate
 

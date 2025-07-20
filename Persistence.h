@@ -27,9 +27,18 @@
 //#define MAX_LINE 10000
 //#define DEBUG_1 1
 
-
+struct OperandHeader {
+	int matrix_id;
+	int operation_id;
+	int row_count;
+	int col_count;
+	int matrix_type; // 0 for operand, 1 for result
+};
 
 // Function declarations
+
+int				extract_operand_header(char* _line, OperandHeader* _operand_header);
+
 unsigned short*	extract_operand_matrix_row(char* _line, unsigned short _col_count, unsigned short* _values);
 unsigned int*	extract_result_matrix_row(char* _line, unsigned short _col_count, unsigned int* _values);
 //Matrix*		extract_matrix_operand(char* _line, int _matrix_id, int _operand_id, int _row_count, int _col_count, 
@@ -47,6 +56,6 @@ int				save_matrix_operations(Operation* _operation_list, FILE* _file_to_write_t
 // test functions
 int				test_load_matrix_operations(); 
 int				test_save_matrix_operations(); 
-int				test_persistence(char* _filename, Operation* _operations);
+Operation*		load_matrix_test_data(FILE* _file, Operation* _operation_list);
 
 #endif // MATRIX_PERSISTENCE_H

@@ -12,6 +12,8 @@
 MatrixData* allocate_matrix_data(unsigned short _data_type, unsigned short int rows, unsigned short int cols);
 Matrix*		allocate_matrix_with_matrix_data(unsigned short _operation_id, unsigned short _matrix_id, 
 	unsigned short int rows, unsigned short int cols, int _matrix_type);
+
+Operation* allocate_operation_empty(unsigned short _operation_id);
 Operation*	allocate_operation(unsigned short _operation_id, Matrix* _operand1, Matrix* _operand2, Matrix* _result);
 
 // deallocation functions

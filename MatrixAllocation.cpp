@@ -50,7 +50,7 @@ MatrixData* allocate_matrix_data(unsigned short _data_type, unsigned short int r
 			break;
 		}
 		default: {
-			std::cerr << "Failed allocation of matrix data - Unknown data type" << std::endl;
+			fprintf(stderr, "Failed allocation of matrix data - Unknown data type");
 			return nullptr;
 		}
 	}
@@ -67,10 +67,6 @@ Matrix* allocate_matrix_with_matrix_data(unsigned short _operation_id, unsigned 
 	// allocate memory for matrix header
 	Matrix* matrix = (Matrix*) c_alloc(SINGLE_INSTANCE, sizeof(Matrix), "Matrix Header", 0);
 	if (matrix) {
-
-		if (_matrix_type == MATRIX_TYPE_RESULT) {
-			printf("\n -- allocating for result matrix\n");
-		}
 
 		matrix->operation_id = _operation_id;
 		matrix->matrix_id = _matrix_id;
@@ -117,9 +113,6 @@ Matrix* allocate_matrix_with_matrix_data(unsigned short _operation_id, unsigned 
 		fprintf(stderr, "Memory allocation for matrix id: %d failed\n", _matrix_id);
 		return nullptr;
 	}
-	if (_matrix_type == MATRIX_TYPE_RESULT) {
-		printf(" -- end allocating for result matrix\n\n");
-	}
 
 	return matrix;
 }
@@ -156,6 +149,36 @@ Matrix* deprecated_allocate_matrix(unsigned short _operation_id, unsigned short 
 	
 	return matrix;
 
+}
+
+Operation* allocate_operation_empty(unsigned short _operation_id) {
+
+	Operation* operation = nullptr;
+	operation = (Operation*)c_alloc(SINGLE_INSTANCE, sizeof(Operation), "Operation Header", 0);
+
+	if (operation) {
+		operation->operation_id = _operation_id;
+		operation->total_allocated_memory_bytes = SINGLE_INSTANCE * sizeof(Operation);
+		if (DEBUG_MEMORY_ALLOC) {
+			printf("Allocated memory for operation id: %d totalling %d bytes vs sizeOf(Operation): %llu\n",
+				_operation_id, operation->total_allocated_memory_bytes, sizeof(Operation));
+		}
+		
+		operation->operand1 = nullptr;
+		operation->operand2 = nullptr;
+		operation->result = nullptr;
+		operation->next = nullptr; // Initialize next pointer to null
+		
+		if (DEBUG_MEMORY_ALLOC) {
+			printf("Total allocated memory for operation id: %d inclusive of matrices and data totalling %d bytes\n",
+				_operation_id, operation->total_allocated_memory_bytes);
+		}
+		return operation;
+	}
+	else {
+		fprintf(stderr, "Memory allocation for operation id: %d failed\n", _operation_id);
+		return nullptr;
+	}
 }
 
 Operation* allocate_operation(unsigned short _operation_id, Matrix* _operand1, Matrix* _operand2, Matrix* _result) {
@@ -208,7 +231,7 @@ int deallocate_matrix_data(MatrixData* _matrix_data, Matrix* _parent_matrix) {
 			break;
 		}
 		default: {
-			std::cerr << "Deallocation - unknown data type" << std::endl;
+			fprintf(stderr, "Deallocation - unknown data type");
 			return EXIT_FAILURE;
 		}
 	}
@@ -233,18 +256,21 @@ int deallocate_matrix(Matrix* _matrix) {
 			_matrix->total_allocated_memory_bytes -= tmp_memory_size;
 		}
 		else {
-			std::cerr << "Failed to deallocate matrix data for Matrix id: " << _matrix->matrix_id << std::endl;
+			fprintf(stderr, "Failed to deallocate matrix data for Matrix id %d:\n", _matrix->matrix_id);
 			return EXIT_FAILURE;
 		}
 	}
 	else {
-		std::cerr << "Matrix is NULL" << std::endl;
+		fprintf(stderr, "Matrix is NULL\n");
+		
 		return EXIT_FAILURE;
 	}
 
 	f_ree(_matrix);
 
-	printf("Deallocated memory for Matrix: %d bytes that was remaining\n", tmp_memory_size);
+	if (DEBUG_MEMORY_ALLOC) {
+		printf("Deallocated memory for Matrix: %d bytes that was remaining\n", tmp_memory_size);
+	}
 
 	return SUCCESS;
 }
@@ -269,7 +295,7 @@ int deallocate_operation(Operation* _operation) {
 		}
 	}
 	else {
-		std::cerr << "Operation is NULL" << std::endl;
+		fprintf(stderr, "Operation is NULL\n");
 	}
 
 	return EXIT_SUCCESS;

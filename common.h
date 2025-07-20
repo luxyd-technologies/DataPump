@@ -1,9 +1,7 @@
 #pragma once
+
 #ifndef COMMON_H
 #define COMMON_H
-
-
-
 
 #define NEW_STRUCTURE				1
 
@@ -11,7 +9,6 @@
 #define MSG_ERROR_OUTPUT			1
 
 #define SINGLE_INSTANCE				1	
-
 
 #define MAX_OPERATION_COUNT			1000 // Maximum number of operations in a matrix operation
 #define MAX_ROW_STRING_LENGTH		4096
@@ -38,7 +35,6 @@
 #define VAR_TYPE_MATRIX				14
 #define VAR_TYPE_OPERATION			15
 
-
 // state definitions
 #define STATE_OUT_OF_OPERATION      0
 #define STATE_INSIDE_OPERATION      1
@@ -54,7 +50,7 @@
 #define MATRIX_COUNT_PER_OPERATION	3
 #define MATRIX_HEADER_SIZE			5
 #define MAX_LINE					10000
-#define DEBUG_1						1
+#define DEBUG_1						0
 
 //unsigned int	generate_truly_random_uint();
 
